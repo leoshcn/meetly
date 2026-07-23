@@ -1,0 +1,28 @@
+{
+  "id": "meetly-week1-bootstrap",
+  "name": "meetly-week1-bootstrap",
+  "title": "Meetly week-1 Trellis bootstrap",
+  "description": "Parent: product decisions, min specs, week-1 task map",
+  "status": "planning",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "leo",
+  "assignee": "leo",
+  "createdAt": "2026-07-23",
+  "completedAt": null,
+  "branch": null,
+  "base_branch": "master",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [
+    "07-23-scaffold-tauri-shell"
+  ],
+  "parent": null,
+  "relatedFiles": [],
+  "notes": "",
+  "meta": {}
+}
