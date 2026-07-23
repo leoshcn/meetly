@@ -1,0 +1,102 @@
+:root {
+  color: #1a1f24;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #d9e7f5 0%, transparent 55%),
+    radial-gradient(900px 500px at 100% 0%, #e8f0e6 0%, transparent 50%),
+    #f7f8fa;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.5;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 1.5rem;
+  border-bottom: 1px solid #dce2e8;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.app-header .brand {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  color: #15202b;
+}
+
+.app-header nav {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.app-header nav button {
+  border: 1px solid transparent;
+  background: transparent;
+  font: inherit;
+  padding: 0.35rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #3d4752;
+}
+
+.app-header nav button.active {
+  background: #eef2f6;
+  border-color: #d5dde5;
+  color: #15202b;
+}
+
+.app-main {
+  flex: 1;
+  padding: 1.75rem 1.5rem 2.5rem;
+  max-width: 52rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.app-main h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+}
+
+.app-main > div > p {
+  margin: 0 0 1.25rem;
+  color: #5c6570;
+}
+
+.app-main > div > button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #2f3a45;
+  background: #2f3a45;
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+}

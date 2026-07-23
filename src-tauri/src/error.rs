@@ -1,0 +1,75 @@
+use serde::Serialize;
+use serde_json::Value;
+
+/// IPC error envelope shared with the frontend `AppError` shape.
+#[derive(Debug, Clone, Serialize)]
+pub struct AppErrorDto {
+    pub code: String,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<Value>,
+}
+
+pub type CmdResult<T> = Result<T, AppErrorDto>;
+
+impl AppErrorDto {
+    pub fn new(code: impl Into<String>, message: impl Into<String>) -> Self {
+        Self {
+            code: code.into(),
+            message: message.into(),
+            details: None,
+        }
+    }
+
+    pub fn with_details(
+        code: impl Into<String>,
+        message: impl Into<String>,
+        details: Value,
+    ) -> Self {
+        Self {
+            code: code.into(),
+            message: message.into(),
+            details: Some(details),
+        }
+    }
+
+    pub fn settings_invalid(message: impl Into<String>) -> Self {
+        Self::new("SETTINGS_INVALID", message)
+    }
+
+    pub fn db_error(message: impl Into<String>) -> Self {
+        Self::new("DB_ERROR", message)
+    }
+
+    pub fn internal(message: impl Into<String>) -> Self {
+        Self::new("INTERNAL", message)
+    }
+}
+
+impl From<rusqlite::Error> for AppErrorDto {
+    fn from(err: rusqlite::Error) -> Self {
+        // Never forward rusqlite Display — it can include absolute filesystem paths.
+        let _ = err;
+        AppErrorDto::db_error("Database operation failed")
+    }
+}
+
+impl From<serde_json::Error> for AppErrorDto {
+    fn from(err: serde_json::Error) -> Self {
+        let _ = err;
+        AppErrorDto::db_error("Failed to encode or decode settings JSON")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rusqlite_error_maps_to_db_error() {
+        let err = AppErrorDto::from(rusqlite::Error::QueryReturnedNoRows);
+        assert_eq!(err.code, "DB_ERROR");
+        assert_eq!(err.message, "Database operation failed");
+        assert!(!err.message.contains('/') && !err.message.contains('\\'));
+    }
+}

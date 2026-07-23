@@ -1,0 +1,1 @@
+export { SettingsHotwordsPanel } from "./SettingsHotwords";
