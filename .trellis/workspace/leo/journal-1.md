@@ -110,3 +110,36 @@ Fixed FFmpeg download failing after MSI install by writing under app_data_dir in
 ### Next Steps
 
 - None - task complete
+
+
+## Session 4: Recording live waveform meter
+
+**Date**: 2026-07-25
+**Task**: Recording live waveform meter
+**Branch**: `main`
+
+### Summary
+
+Added dual-track live waveform during recording: backend LevelMeter on mic/loopback exposed via record_status, frontend canvas ribbon UI for visual capture confirmation.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b8e085a` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
