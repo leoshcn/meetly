@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { __setInvokeForTests } from "../client";
 import {
+  settingsClearDashscopeCredentials,
   settingsClearDoubaoCredentials,
   settingsGet,
   settingsUpdate,
@@ -16,6 +17,7 @@ describe("settings commands", () => {
       hotwords: ["Meetly"],
       context_text: "",
       doubao_configured: false,
+      dashscope_configured: false,
     });
     __setInvokeForTests(invoke);
 
@@ -23,6 +25,7 @@ describe("settings commands", () => {
     expect(invoke).toHaveBeenCalledWith("settings_get", undefined);
     expect(result.hotwords).toEqual(["Meetly"]);
     expect(result.doubao_configured).toBe(false);
+    expect(result.dashscope_configured).toBe(false);
   });
 
   it("settingsUpdate passes SettingsUpdate payload", async () => {
@@ -30,6 +33,7 @@ describe("settings commands", () => {
       hotwords: ["Meetly"],
       context_text: "ctx",
       doubao_configured: true,
+      dashscope_configured: true,
     });
     __setInvokeForTests(invoke);
 
@@ -38,6 +42,7 @@ describe("settings commands", () => {
       context_text: "ctx",
       doubao_app_id: "app",
       doubao_access_token: "token",
+      dashscope_api_key: "sk-test",
     });
     expect(invoke).toHaveBeenCalledWith("settings_update", {
       update: {
@@ -45,6 +50,7 @@ describe("settings commands", () => {
         context_text: "ctx",
         doubao_app_id: "app",
         doubao_access_token: "token",
+        dashscope_api_key: "sk-test",
       },
     });
   });
@@ -54,11 +60,27 @@ describe("settings commands", () => {
       hotwords: [],
       context_text: "",
       doubao_configured: false,
+      dashscope_configured: false,
     });
     __setInvokeForTests(invoke);
     await settingsClearDoubaoCredentials();
     expect(invoke).toHaveBeenCalledWith(
       "settings_clear_doubao_credentials",
+      undefined,
+    );
+  });
+
+  it("settingsClearDashscopeCredentials invokes clear command", async () => {
+    const invoke = vi.fn().mockResolvedValue({
+      hotwords: [],
+      context_text: "",
+      doubao_configured: false,
+      dashscope_configured: false,
+    });
+    __setInvokeForTests(invoke);
+    await settingsClearDashscopeCredentials();
+    expect(invoke).toHaveBeenCalledWith(
+      "settings_clear_dashscope_credentials",
       undefined,
     );
   });

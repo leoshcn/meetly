@@ -12,3 +12,7 @@ export function settingsUpdate(update: SettingsUpdate): Promise<Settings> {
 export function settingsClearDoubaoCredentials(): Promise<Settings> {
   return invokeCommand<Settings>("settings_clear_doubao_credentials");
 }
+
+export function settingsClearDashscopeCredentials(): Promise<Settings> {
+  return invokeCommand<Settings>("settings_clear_dashscope_credentials");
+}

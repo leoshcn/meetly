@@ -1,0 +1,1 @@
+export { MeetingSummaryPanel } from "./MeetingSummary";

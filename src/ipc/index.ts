@@ -8,11 +8,13 @@ export type {
   Transcript,
   Job,
   JobStatus,
+  Summary,
 } from "./types";
 export {
   settingsGet,
   settingsUpdate,
   settingsClearDoubaoCredentials,
+  settingsClearDashscopeCredentials,
 } from "./commands/settings";
 export {
   meetingsCreateFromFile,
@@ -20,4 +22,5 @@ export {
   meetingsGetTranscript,
 } from "./commands/meetings";
 export { jobsStartTranscription, jobsGet } from "./commands/jobs";
+export { summaryGenerate, summaryGet } from "./commands/summary";
 export { appHealth } from "./commands/health";

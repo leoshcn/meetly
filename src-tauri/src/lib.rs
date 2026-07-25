@@ -41,11 +41,14 @@ pub fn run() {
             commands::settings::settings_get,
             commands::settings::settings_update,
             commands::settings::settings_clear_doubao_credentials,
+            commands::settings::settings_clear_dashscope_credentials,
             commands::meetings::meetings_create_from_file,
             commands::meetings::meetings_get,
             commands::meetings::meetings_get_transcript,
             commands::jobs::jobs_start_transcription,
             commands::jobs::jobs_get,
+            commands::summary::summary_generate,
+            commands::summary::summary_get,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

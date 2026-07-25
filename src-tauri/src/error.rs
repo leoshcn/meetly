@@ -70,6 +70,24 @@ impl AppErrorDto {
     pub fn io_error(message: impl Into<String>) -> Self {
         Self::new("IO_ERROR", message)
     }
+
+    pub fn summary_not_ready() -> Self {
+        Self::new(
+            "SUMMARY_NOT_READY",
+            "Transcript is not ready for summary generation",
+        )
+    }
+
+    pub fn summary_not_configured() -> Self {
+        Self::new(
+            "SUMMARY_NOT_CONFIGURED",
+            "DashScope API key is not configured",
+        )
+    }
+
+    pub fn summary_provider_error(message: impl Into<String>) -> Self {
+        Self::new("SUMMARY_PROVIDER_ERROR", message)
+    }
 }
 
 impl From<rusqlite::Error> for AppErrorDto {

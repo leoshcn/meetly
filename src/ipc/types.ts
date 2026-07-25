@@ -2,6 +2,7 @@ export type Settings = {
   hotwords: string[];
   context_text: string;
   doubao_configured: boolean;
+  dashscope_configured: boolean;
 };
 
 export type SettingsUpdate = {
@@ -11,6 +12,8 @@ export type SettingsUpdate = {
   doubao_app_id?: string;
   /** Write-only; never returned by settings_get. */
   doubao_access_token?: string;
+  /** Write-only DashScope API key; never returned by settings_get. */
+  dashscope_api_key?: string;
 };
 
 export type HealthResponse = {
@@ -41,4 +44,13 @@ export type Job = {
   error_message: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type Summary = {
+  meeting_id: string;
+  key_points: string[];
+  action_items: string[];
+  decisions: string[];
+  language: "zh-CN";
+  created_at: string;
 };

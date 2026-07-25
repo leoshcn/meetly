@@ -1,0 +1,57 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.actions button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #2f3a45;
+  background: #2f3a45;
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+}
+
+.actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.block h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.block ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  line-height: 1.5;
+}
+
+.empty {
+  margin: 0;
+  color: #5c6570;
+  font-size: 0.9rem;
+}
+
+.error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}

@@ -31,6 +31,7 @@ pub fn validate_hotwords(hotwords: &[String]) -> CmdResult<()> {
 
 fn with_configured(mut settings: Settings) -> Settings {
     settings.doubao_configured = credentials::is_configured();
+    settings.dashscope_configured = credentials::is_dashscope_configured();
     settings
 }
 
@@ -53,6 +54,7 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
                 hotwords,
                 context_text,
                 doubao_configured: false,
+                dashscope_configured: false,
             }))
         }
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(with_configured(Settings::default())),
@@ -72,19 +74,26 @@ fn apply_credential_update(update: &SettingsUpdate) -> CmdResult<()> {
         .map(|s| !s.trim().is_empty())
         .unwrap_or(false);
 
-    if !has_app && !has_token {
-        return Ok(());
-    }
-    if !(has_app && has_token) {
-        return Err(AppErrorDto::settings_invalid(
-            "Doubao app id and access token must both be provided together",
-        ));
+    if has_app || has_token {
+        if !(has_app && has_token) {
+            return Err(AppErrorDto::settings_invalid(
+                "Doubao app id and access token must both be provided together",
+            ));
+        }
+        credentials::set_credentials(
+            update.doubao_app_id.as_ref().unwrap(),
+            update.doubao_access_token.as_ref().unwrap(),
+        )?;
     }
 
-    credentials::set_credentials(
-        update.doubao_app_id.as_ref().unwrap(),
-        update.doubao_access_token.as_ref().unwrap(),
-    )
+    if let Some(ref key) = update.dashscope_api_key {
+        let trimmed = key.trim();
+        if !trimmed.is_empty() {
+            credentials::set_dashscope_credentials(trimmed)?;
+        }
+    }
+
+    Ok(())
 }
 
 pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<Settings> {
@@ -124,11 +133,17 @@ pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<S
         hotwords: current.hotwords,
         context_text: current.context_text,
         doubao_configured: false,
+        dashscope_configured: false,
     }))
 }
 
 pub fn clear_doubao_credentials(conn: &Connection) -> CmdResult<Settings> {
     credentials::clear_credentials()?;
+    get_settings(conn)
+}
+
+pub fn clear_dashscope_credentials(conn: &Connection) -> CmdResult<Settings> {
+    credentials::clear_dashscope_credentials()?;
     get_settings(conn)
 }
 
@@ -146,6 +161,7 @@ mod tests {
         assert_eq!(settings.hotwords, Vec::<String>::new());
         assert_eq!(settings.context_text, "");
         assert!(!settings.doubao_configured);
+        assert!(!settings.dashscope_configured);
     }
 
     #[test]
@@ -265,5 +281,27 @@ mod tests {
 
         let cleared = clear_doubao_credentials(&conn).expect("clear");
         assert!(!cleared.doubao_configured);
+    }
+
+    #[test]
+    fn dashscope_configured_flag_without_leaking_key() {
+        reset_for_test();
+        let conn = open_memory().expect("memory db");
+        let updated = update_settings(
+            &conn,
+            SettingsUpdate {
+                dashscope_api_key: Some("sk-dash-secret".into()),
+                ..Default::default()
+            },
+        )
+        .expect("creds");
+
+        assert!(updated.dashscope_configured);
+        let json = serde_json::to_string(&updated).expect("ser");
+        assert!(!json.contains("sk-dash-secret"));
+        assert!(json.contains("dashscope_configured"));
+
+        let cleared = clear_dashscope_credentials(&conn).expect("clear");
+        assert!(!cleared.dashscope_configured);
     }
 }

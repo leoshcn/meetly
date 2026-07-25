@@ -16,7 +16,10 @@ Open a “x64 Native Tools” / Developer Command Prompt, or ensure `vcvars64.ba
 npm install
 ```
 
-Doubao ASR credentials are entered in **Settings** and stored in the OS keyring (not SQLite, never returned by `settings_get`). Do not commit real secrets.
+Provider credentials are entered in **Settings** and stored in the OS keyring via the `keyring` crate with native backends (`windows-native` / `apple-native` / Secret Service). They are not written to SQLite and are never returned by `settings_get`. Do not commit real secrets.
+
+- **Doubao** (transcription): App Id + Access Token
+- **DashScope / 通义千问** (summary): API Key — model `qwen3.7-plus`
 
 ## Run (desktop)
 
@@ -30,8 +33,15 @@ This starts Vite on `http://localhost:1420` and opens the Meetly window.
 
 - Provider: Doubao **flash** recognize (`audio.data` base64).
 - Single-file size cap: **20 MiB** (`ASR_PAYLOAD_TOO_LARGE` if larger).
-- Hotwords from settings are sent to ASR; `context_text` is reserved for summary and is **not** sent to Doubao ASR.
+- Hotwords from settings are sent to ASR; `context_text` is used for summary and is **not** sent to Doubao ASR.
 - Configure App Id + Access Token under Settings before importing audio.
+
+## Summary notes
+
+- After a successful transcript, click **生成摘要** on the home panel.
+- Provider: Qwen via DashScope OpenAI-compatible Chat Completions (`qwen3.7-plus`).
+- Output: 要点 / 待办 / 决策 (zh-CN). Empty `context_text` still works.
+- Configure DashScope API Key under Settings (`dashscope_configured` flag only; key never returned).
 
 ## Tests
 
@@ -42,7 +52,7 @@ npm test
 # Typecheck
 npm run typecheck
 
-# Rust (settings, hotwords, jobs, credentials)
+# Rust (settings, hotwords, jobs, credentials, summary)
 cd src-tauri
 cargo test
 ```
@@ -52,4 +62,4 @@ cargo test
 - `src/` — React UI (`app/`, `pages/`, `features/`, `ipc/`, `shared/`, `styles/`)
 - `src-tauri/` — Tauri commands, services, providers, SQLite (`db/`, `commands/`, `services/`, `providers/`, `models/`)
 
-Settings (`hotwords`, `context_text`) persist in the app data SQLite file (`meetly.db`). Doubao secrets live only in the OS credential store; `settings_get` exposes `doubao_configured: boolean` only.
+Settings (`hotwords`, `context_text`) persist in the app data SQLite file (`meetly.db`). Secrets live only in the OS credential store; `settings_get` exposes `doubao_configured` and `dashscope_configured` booleans only.

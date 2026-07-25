@@ -5,7 +5,7 @@ use crate::models::{Settings, SettingsUpdate};
 use crate::services;
 use crate::AppState;
 
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn settings_get(state: State<'_, AppState>) -> CmdResult<Settings> {
     let conn = state
         .db
@@ -14,7 +14,7 @@ pub fn settings_get(state: State<'_, AppState>) -> CmdResult<Settings> {
     services::get_settings(&conn)
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn settings_update(
     state: State<'_, AppState>,
     update: SettingsUpdate,
@@ -26,11 +26,20 @@ pub fn settings_update(
     services::update_settings(&conn, update)
 }
 
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 pub fn settings_clear_doubao_credentials(state: State<'_, AppState>) -> CmdResult<Settings> {
     let conn = state
         .db
         .lock()
         .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
     services::clear_doubao_credentials(&conn)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn settings_clear_dashscope_credentials(state: State<'_, AppState>) -> CmdResult<Settings> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    services::clear_dashscope_credentials(&conn)
 }

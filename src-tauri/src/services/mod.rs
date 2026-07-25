@@ -1,6 +1,10 @@
 pub mod credentials;
 pub mod meeting_service;
 pub mod settings_service;
+pub mod summary_service;
 pub mod transcription_service;
 
-pub use settings_service::{clear_doubao_credentials, get_settings, update_settings};
+pub use settings_service::{
+    clear_dashscope_credentials, clear_doubao_credentials, get_settings, update_settings,
+};
+pub use summary_service::{generate_summary_http, get_summary};

@@ -13,7 +13,15 @@ import styles from "./TranscriptionImport.module.css";
 
 const POLL_MS = 1000;
 
-export function TranscriptionImportPanel() {
+type Props = {
+  onTranscriptReady?: (meetingId: string) => void;
+  onReset?: () => void;
+};
+
+export function TranscriptionImportPanel({
+  onTranscriptReady,
+  onReset,
+}: Props) {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [job, setJob] = useState<Job | null>(null);
   const [transcript, setTranscript] = useState<string | null>(null);
@@ -47,6 +55,7 @@ export function TranscriptionImportPanel() {
           const t = await meetingsGetTranscript(meetingId);
           setTranscript(t.text);
           setBusy(false);
+          onTranscriptReady?.(meetingId);
         } else if (next.status === "failed") {
           stopPolling();
           setError(
@@ -72,6 +81,7 @@ export function TranscriptionImportPanel() {
     setMeeting(null);
     setBusy(true);
     stopPolling();
+    onReset?.();
 
     try {
       const selected = await open({

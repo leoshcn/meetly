@@ -6,7 +6,7 @@ export function SettingsPage() {
     <div>
       <h1>设置</h1>
       <p>
-        管理豆包凭证、转写热词与摘要上下文。凭证存本机密钥库；热词/上下文存本地
+        管理豆包凭证、DashScope API Key、转写热词与摘要上下文。凭证存本机密钥库；热词/上下文存本地
         SQLite。
       </p>
       <SettingsCredentialsPanel />
