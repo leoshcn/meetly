@@ -143,3 +143,37 @@ Added dual-track live waveform during recording: backend LevelMeter on mic/loopb
 ### Next Steps
 
 - None - task complete
+
+
+## Session 5: Meeting recording with mix and FFmpeg settings
+
+**Date**: 2026-07-25
+**Task**: Meeting recording with mix and FFmpeg settings
+**Branch**: `main`
+
+### Summary
+
+Shipped in-app meeting recording: mic + system-speaker mix, configurable save dir, stop-to-transcribe flow; M4A via FFmpeg with WAV fallback; settings UI for FFmpeg download/status; MSI-safe FFmpeg install under app data.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b8e085a` | (see git log) |
+| `a3bd801` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
