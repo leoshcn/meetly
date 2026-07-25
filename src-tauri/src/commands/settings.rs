@@ -43,3 +43,12 @@ pub fn settings_clear_dashscope_credentials(state: State<'_, AppState>) -> CmdRe
         .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
     services::clear_dashscope_credentials(&conn)
 }
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn settings_clear_tos_credentials(state: State<'_, AppState>) -> CmdResult<Settings> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    services::clear_tos_credentials(&conn)
+}

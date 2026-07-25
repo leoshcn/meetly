@@ -16,3 +16,7 @@ export function settingsClearDoubaoCredentials(): Promise<Settings> {
 export function settingsClearDashscopeCredentials(): Promise<Settings> {
   return invokeCommand<Settings>("settings_clear_dashscope_credentials");
 }
+
+export function settingsClearTosCredentials(): Promise<Settings> {
+  return invokeCommand<Settings>("settings_clear_tos_credentials");
+}

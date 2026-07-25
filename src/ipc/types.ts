@@ -3,6 +3,10 @@ export type Settings = {
   context_text: string;
   doubao_configured: boolean;
   dashscope_configured: boolean;
+  tos_configured: boolean;
+  tos_region: string;
+  tos_bucket: string;
+  tos_endpoint: string;
 };
 
 export type SettingsUpdate = {
@@ -14,6 +18,13 @@ export type SettingsUpdate = {
   doubao_access_token?: string;
   /** Write-only DashScope API key; never returned by settings_get. */
   dashscope_api_key?: string;
+  /** Write-only TOS Access Key Id; never returned by settings_get. */
+  tos_access_key_id?: string;
+  /** Write-only TOS Secret Access Key; never returned by settings_get. */
+  tos_secret_access_key?: string;
+  tos_region?: string;
+  tos_bucket?: string;
+  tos_endpoint?: string;
 };
 
 export type HealthResponse = {

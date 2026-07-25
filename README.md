@@ -19,6 +19,7 @@ npm install
 Provider credentials are entered in **Settings** and stored in the OS keyring via the `keyring` crate with native backends (`windows-native` / `apple-native` / Secret Service). They are not written to SQLite and are never returned by `settings_get`. Do not commit real secrets.
 
 - **Doubao** (transcription): App Id + Access Token
+- **Volcengine TOS** (large-file transcription): Access Key + Secret Key in keyring; region / bucket / optional endpoint in SQLite
 - **DashScope / 通义千问** (summary): API Key — model `qwen3.7-plus`
 
 ## Run (desktop)
@@ -31,10 +32,13 @@ This starts Vite on `http://localhost:1420` and opens the Meetly window.
 
 ## Transcription notes
 
-- Provider: Doubao **flash** recognize (`audio.data` base64).
-- Single-file size cap: **20 MiB** (`ASR_PAYLOAD_TOO_LARGE` if larger).
+- Dual path by file size:
+  - **≤ 20 MiB**: Doubao **flash** recognize (`audio.data` base64). TOS not required.
+  - **20 MiB < size ≤ 512 MiB**: upload to user-configured TOS → pre-signed GET URL → Doubao **standard async** submit/query (`volc.bigasr.auc`). Poll window **45 minutes**.
+  - **> 512 MiB**: `ASR_PAYLOAD_TOO_LARGE`.
+- Missing TOS for a large file → `TOS_NOT_CONFIGURED`. Upload/pre-sign failures → `TOS_UPLOAD_ERROR`. Poll deadline → `ASR_TIMEOUT`.
 - Hotwords from settings are sent to ASR; `context_text` is used for summary and is **not** sent to Doubao ASR.
-- Configure App Id + Access Token under Settings before importing audio.
+- Configure Doubao (and TOS for large files) under Settings before importing audio.
 
 ## Summary notes
 
@@ -52,7 +56,7 @@ npm test
 # Typecheck
 npm run typecheck
 
-# Rust (settings, hotwords, jobs, credentials, summary)
+# Rust (settings, hotwords, jobs, credentials, summary, TOS/async stubs)
 cd src-tauri
 cargo test
 ```
@@ -62,4 +66,4 @@ cargo test
 - `src/` — React UI (`app/`, `pages/`, `features/`, `ipc/`, `shared/`, `styles/`)
 - `src-tauri/` — Tauri commands, services, providers, SQLite (`db/`, `commands/`, `services/`, `providers/`, `models/`)
 
-Settings (`hotwords`, `context_text`) persist in the app data SQLite file (`meetly.db`). Secrets live only in the OS credential store; `settings_get` exposes `doubao_configured` and `dashscope_configured` booleans only.
+Settings (`hotwords`, `context_text`, TOS region/bucket/endpoint) persist in the app data SQLite file (`meetly.db`). Secrets live only in the OS credential store; `settings_get` exposes `doubao_configured`, `dashscope_configured`, and `tos_configured` booleans (plus non-secret TOS fields) only.

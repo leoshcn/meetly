@@ -8,8 +8,11 @@ use uuid::Uuid;
 use crate::error::{AppErrorDto, CmdResult};
 use crate::models::{Meeting, Transcript};
 
-/// Default flash ASR payload cap (20 MiB).
-pub const MAX_AUDIO_BYTES: u64 = 20 * 1024 * 1024;
+/// Flash/base64 ASR path cap (20 MiB). Files at or below this size do not need TOS.
+pub const FLASH_MAX_AUDIO_BYTES: u64 = 20 * 1024 * 1024;
+
+/// Hard reject cap for import / async path (512 MiB).
+pub const ASYNC_MAX_AUDIO_BYTES: u64 = 512 * 1024 * 1024;
 
 pub fn create_from_file(conn: &Connection, path: &str) -> CmdResult<Meeting> {
     let path = path.trim();
@@ -24,8 +27,8 @@ pub fn create_from_file(conn: &Connection, path: &str) -> CmdResult<Meeting> {
     if !meta.is_file() {
         return Err(AppErrorDto::io_error("Path is not a file"));
     }
-    if meta.len() > MAX_AUDIO_BYTES {
-        return Err(AppErrorDto::asr_payload_too_large(MAX_AUDIO_BYTES));
+    if meta.len() > ASYNC_MAX_AUDIO_BYTES {
+        return Err(AppErrorDto::asr_payload_too_large(ASYNC_MAX_AUDIO_BYTES));
     }
 
     let title = file_path
@@ -144,10 +147,24 @@ mod tests {
         let path = dir.join(format!("meetly-big-{}.wav", Uuid::new_v4()));
         {
             let f = fs::File::create(&path).expect("create");
-            f.set_len(MAX_AUDIO_BYTES + 1).expect("size");
+            f.set_len(ASYNC_MAX_AUDIO_BYTES + 1).expect("size");
         }
         let err = create_from_file(&conn, path.to_str().unwrap()).expect_err("too big");
         assert_eq!(err.code, "ASR_PAYLOAD_TOO_LARGE");
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn accepts_file_between_flash_and_async_cap() {
+        let conn = open_memory().expect("db");
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("meetly-mid-{}.wav", Uuid::new_v4()));
+        {
+            let f = fs::File::create(&path).expect("create");
+            f.set_len(FLASH_MAX_AUDIO_BYTES + 1).expect("size");
+        }
+        let meeting = create_from_file(&conn, path.to_str().unwrap()).expect("create");
+        assert!(!meeting.id.is_empty());
         let _ = fs::remove_file(&path);
     }
 }

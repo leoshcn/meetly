@@ -67,6 +67,24 @@ impl AppErrorDto {
         Self::new("ASR_PROVIDER_ERROR", message)
     }
 
+    pub fn asr_timeout() -> Self {
+        Self::new(
+            "ASR_TIMEOUT",
+            "Doubao async transcription exceeded the 45 minute poll window",
+        )
+    }
+
+    pub fn tos_not_configured() -> Self {
+        Self::new(
+            "TOS_NOT_CONFIGURED",
+            "TOS credentials and bucket/region are required for files larger than 20 MiB",
+        )
+    }
+
+    pub fn tos_upload_error(message: impl Into<String>) -> Self {
+        Self::new("TOS_UPLOAD_ERROR", message)
+    }
+
     pub fn io_error(message: impl Into<String>) -> Self {
         Self::new("IO_ERROR", message)
     }

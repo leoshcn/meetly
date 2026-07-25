@@ -42,6 +42,7 @@ pub fn run() {
             commands::settings::settings_update,
             commands::settings::settings_clear_doubao_credentials,
             commands::settings::settings_clear_dashscope_credentials,
+            commands::settings::settings_clear_tos_credentials,
             commands::meetings::meetings_create_from_file,
             commands::meetings::meetings_get,
             commands::meetings::meetings_get_transcript,

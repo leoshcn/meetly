@@ -16,6 +16,12 @@ pub struct DashScopeCredentials {
     pub api_key: String,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TosCredentials {
+    pub access_key_id: String,
+    pub secret_access_key: String,
+}
+
 #[cfg(test)]
 mod doubao_store {
     use super::*;
@@ -262,9 +268,146 @@ pub fn clear_dashscope_credentials() -> CmdResult<()> {
 }
 
 #[cfg(test)]
+mod tos_store {
+    use super::*;
+    use std::cell::RefCell;
+
+    thread_local! {
+        static MEMORY: RefCell<Option<(String, String)>> = const { RefCell::new(None) };
+    }
+
+    pub fn get() -> CmdResult<Option<TosCredentials>> {
+        Ok(MEMORY.with(|cell| {
+            cell.borrow().as_ref().map(|(ak, sk)| TosCredentials {
+                access_key_id: ak.clone(),
+                secret_access_key: sk.clone(),
+            })
+        }))
+    }
+
+    pub fn set(access_key_id: &str, secret_access_key: &str) -> CmdResult<()> {
+        MEMORY.with(|cell| {
+            *cell.borrow_mut() =
+                Some((access_key_id.to_string(), secret_access_key.to_string()));
+        });
+        Ok(())
+    }
+
+    pub fn clear() -> CmdResult<()> {
+        MEMORY.with(|cell| {
+            *cell.borrow_mut() = None;
+        });
+        Ok(())
+    }
+
+    pub fn reset_for_test() {
+        let _ = clear();
+    }
+}
+
+#[cfg(not(test))]
+mod tos_store {
+    use super::*;
+    use keyring::Entry;
+
+    const SERVICE: &str = "meetly";
+    const ACCOUNT_AK: &str = "tos_access_key_id";
+    const ACCOUNT_SK: &str = "tos_secret_access_key";
+
+    fn entry(account: &str) -> CmdResult<Entry> {
+        Entry::new(SERVICE, account)
+            .map_err(|_| AppErrorDto::internal("Failed to open credential store"))
+    }
+
+    fn read_secret(account: &str) -> CmdResult<Option<String>> {
+        match entry(account)?.get_password() {
+            Ok(value) if !value.is_empty() => Ok(Some(value)),
+            Ok(_) => Ok(None),
+            Err(keyring::Error::NoEntry) => Ok(None),
+            Err(_) => Err(AppErrorDto::internal("Failed to read credentials")),
+        }
+    }
+
+    pub fn get() -> CmdResult<Option<TosCredentials>> {
+        let access_key_id = read_secret(ACCOUNT_AK)?;
+        let secret_access_key = read_secret(ACCOUNT_SK)?;
+        match (access_key_id, secret_access_key) {
+            (Some(access_key_id), Some(secret_access_key)) => Ok(Some(TosCredentials {
+                access_key_id,
+                secret_access_key,
+            })),
+            _ => Ok(None),
+        }
+    }
+
+    pub fn set(access_key_id: &str, secret_access_key: &str) -> CmdResult<()> {
+        entry(ACCOUNT_AK)?
+            .set_password(access_key_id)
+            .map_err(|_| AppErrorDto::internal("Failed to store TOS access key id"))?;
+        entry(ACCOUNT_SK)?
+            .set_password(secret_access_key)
+            .map_err(|_| AppErrorDto::internal("Failed to store TOS secret access key"))?;
+        match get()? {
+            Some(stored)
+                if stored.access_key_id == access_key_id
+                    && stored.secret_access_key == secret_access_key =>
+            {
+                Ok(())
+            }
+            Some(_) | None => Err(AppErrorDto::internal(
+                "Credential store write did not persist; check OS keyring access",
+            )),
+        }
+    }
+
+    pub fn clear() -> CmdResult<()> {
+        for account in [ACCOUNT_AK, ACCOUNT_SK] {
+            match entry(account)?.delete_credential() {
+                Ok(()) => {}
+                Err(keyring::Error::NoEntry) => {}
+                Err(_) => {
+                    return Err(AppErrorDto::internal("Failed to clear credentials"));
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+pub fn is_tos_secrets_configured() -> bool {
+    matches!(tos_store::get(), Ok(Some(_)))
+}
+
+#[cfg_attr(not(test), allow(dead_code))]
+pub fn get_tos_credentials() -> CmdResult<Option<TosCredentials>> {
+    tos_store::get()
+}
+
+pub fn require_tos_credentials() -> CmdResult<TosCredentials> {
+    tos_store::get()?.ok_or_else(AppErrorDto::tos_not_configured)
+}
+
+/// Persist TOS credentials. Empty strings are rejected.
+pub fn set_tos_credentials(access_key_id: &str, secret_access_key: &str) -> CmdResult<()> {
+    let access_key_id = access_key_id.trim();
+    let secret_access_key = secret_access_key.trim();
+    if access_key_id.is_empty() || secret_access_key.is_empty() {
+        return Err(AppErrorDto::settings_invalid(
+            "TOS access key id and secret access key cannot be empty",
+        ));
+    }
+    tos_store::set(access_key_id, secret_access_key)
+}
+
+pub fn clear_tos_credentials() -> CmdResult<()> {
+    tos_store::clear()
+}
+
+#[cfg(test)]
 pub fn reset_for_test() {
     doubao_store::reset_for_test();
     dashscope_store::reset_for_test();
+    tos_store::reset_for_test();
 }
 
 #[cfg(test)]
@@ -308,5 +451,18 @@ mod tests {
         reset_for_test();
         let err = set_dashscope_credentials("   ").expect_err("empty");
         assert_eq!(err.code, "SETTINGS_INVALID");
+    }
+
+    #[test]
+    fn tos_secrets_configured_flag() {
+        reset_for_test();
+        assert!(!is_tos_secrets_configured());
+        set_tos_credentials("ak", "sk").expect("set");
+        assert!(is_tos_secrets_configured());
+        let creds = get_tos_credentials().expect("get").expect("some");
+        assert_eq!(creds.access_key_id, "ak");
+        assert_eq!(creds.secret_access_key, "sk");
+        clear_tos_credentials().expect("clear");
+        assert!(!is_tos_secrets_configured());
     }
 }

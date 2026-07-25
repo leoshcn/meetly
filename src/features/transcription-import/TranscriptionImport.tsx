@@ -120,7 +120,8 @@ export function TranscriptionImportPanel({
   return (
     <section className={styles.panel}>
       <p className={styles.hint}>
-        导入本地音频并调用豆包极速版转写（单文件上限 20 MiB）。热词会注入 ASR；摘要上下文不会发送给转写。
+        导入本地音频：≤20 MiB 走豆包极速版（无需 TOS）；20 MiB–512 MiB 需配置火山
+        TOS，经上传后走标准异步转写。超过 512 MiB 会被拒绝。热词会注入 ASR；摘要上下文不会发送给转写。
       </p>
       <div className={styles.actions}>
         <button type="button" onClick={importAndTranscribe} disabled={busy}>

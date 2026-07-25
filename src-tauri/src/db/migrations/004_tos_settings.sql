@@ -1,0 +1,2 @@
+-- TOS non-secret settings columns (idempotent adds are applied in pool.rs).
+-- Placeholder so migration numbering is visible in tree; see ensure_tos_settings_columns.

@@ -15,6 +15,7 @@ export {
   settingsUpdate,
   settingsClearDoubaoCredentials,
   settingsClearDashscopeCredentials,
+  settingsClearTosCredentials,
 } from "./commands/settings";
 export {
   meetingsCreateFromFile,

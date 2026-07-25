@@ -29,25 +29,53 @@ pub fn validate_hotwords(hotwords: &[String]) -> CmdResult<()> {
     Ok(())
 }
 
+fn compute_tos_configured(region: &str, bucket: &str) -> bool {
+    credentials::is_tos_secrets_configured()
+        && !region.trim().is_empty()
+        && !bucket.trim().is_empty()
+}
+
 fn with_configured(mut settings: Settings) -> Settings {
     settings.doubao_configured = credentials::is_configured();
     settings.dashscope_configured = credentials::is_dashscope_configured();
+    settings.tos_configured =
+        compute_tos_configured(&settings.tos_region, &settings.tos_bucket);
     settings
+}
+
+/// True when TOS AK/SK and region/bucket are all present (endpoint optional).
+pub fn is_tos_configured(conn: &Connection) -> bool {
+    match get_settings(conn) {
+        Ok(s) => s.tos_configured,
+        Err(_) => false,
+    }
 }
 
 pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
     let mut stmt = conn
-        .prepare("SELECT hotwords, context_text FROM settings WHERE id = 1")
+        .prepare(
+            "SELECT hotwords, context_text, tos_region, tos_bucket, tos_endpoint
+             FROM settings WHERE id = 1",
+        )
         .map_err(AppErrorDto::from)?;
 
     let row = stmt.query_row([], |row| {
         let hotwords_json: String = row.get(0)?;
         let context_text: String = row.get(1)?;
-        Ok((hotwords_json, context_text))
+        let tos_region: String = row.get(2)?;
+        let tos_bucket: String = row.get(3)?;
+        let tos_endpoint: String = row.get(4)?;
+        Ok((
+            hotwords_json,
+            context_text,
+            tos_region,
+            tos_bucket,
+            tos_endpoint,
+        ))
     });
 
     match row {
-        Ok((hotwords_json, context_text)) => {
+        Ok((hotwords_json, context_text, tos_region, tos_bucket, tos_endpoint)) => {
             let hotwords: Vec<String> =
                 serde_json::from_str(&hotwords_json).map_err(AppErrorDto::from)?;
             Ok(with_configured(Settings {
@@ -55,6 +83,10 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
                 context_text,
                 doubao_configured: false,
                 dashscope_configured: false,
+                tos_configured: false,
+                tos_region,
+                tos_bucket,
+                tos_endpoint,
             }))
         }
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(with_configured(Settings::default())),
@@ -93,6 +125,52 @@ fn apply_credential_update(update: &SettingsUpdate) -> CmdResult<()> {
         }
     }
 
+    let has_tos_ak = update
+        .tos_access_key_id
+        .as_ref()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false);
+    let has_tos_sk = update
+        .tos_secret_access_key
+        .as_ref()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false);
+
+    if has_tos_ak || has_tos_sk {
+        if !(has_tos_ak && has_tos_sk) {
+            return Err(AppErrorDto::settings_invalid(
+                "TOS access key id and secret access key must both be provided together",
+            ));
+        }
+        credentials::set_tos_credentials(
+            update.tos_access_key_id.as_ref().unwrap(),
+            update.tos_secret_access_key.as_ref().unwrap(),
+        )?;
+    }
+
+    Ok(())
+}
+
+fn persist_settings_row(conn: &Connection, settings: &Settings) -> CmdResult<()> {
+    let hotwords_json = serde_json::to_string(&settings.hotwords).map_err(AppErrorDto::from)?;
+    conn.execute(
+        "INSERT INTO settings (id, hotwords, context_text, tos_region, tos_bucket, tos_endpoint)
+         VALUES (1, ?1, ?2, ?3, ?4, ?5)
+         ON CONFLICT(id) DO UPDATE SET
+           hotwords = excluded.hotwords,
+           context_text = excluded.context_text,
+           tos_region = excluded.tos_region,
+           tos_bucket = excluded.tos_bucket,
+           tos_endpoint = excluded.tos_endpoint",
+        rusqlite::params![
+            hotwords_json,
+            settings.context_text,
+            settings.tos_region,
+            settings.tos_bucket,
+            settings.tos_endpoint
+        ],
+    )
+    .map_err(AppErrorDto::from)?;
     Ok(())
 }
 
@@ -118,23 +196,18 @@ pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<S
         current.context_text = context_text;
     }
 
-    let hotwords_json = serde_json::to_string(&current.hotwords).map_err(AppErrorDto::from)?;
+    if let Some(tos_region) = update.tos_region {
+        current.tos_region = tos_region.trim().to_string();
+    }
+    if let Some(tos_bucket) = update.tos_bucket {
+        current.tos_bucket = tos_bucket.trim().to_string();
+    }
+    if let Some(tos_endpoint) = update.tos_endpoint {
+        current.tos_endpoint = tos_endpoint.trim().to_string();
+    }
 
-    conn.execute(
-        "INSERT INTO settings (id, hotwords, context_text) VALUES (1, ?1, ?2)
-         ON CONFLICT(id) DO UPDATE SET
-           hotwords = excluded.hotwords,
-           context_text = excluded.context_text",
-        rusqlite::params![hotwords_json, current.context_text],
-    )
-    .map_err(AppErrorDto::from)?;
-
-    Ok(with_configured(Settings {
-        hotwords: current.hotwords,
-        context_text: current.context_text,
-        doubao_configured: false,
-        dashscope_configured: false,
-    }))
+    persist_settings_row(conn, &current)?;
+    get_settings(conn)
 }
 
 pub fn clear_doubao_credentials(conn: &Connection) -> CmdResult<Settings> {
@@ -147,27 +220,40 @@ pub fn clear_dashscope_credentials(conn: &Connection) -> CmdResult<Settings> {
     get_settings(conn)
 }
 
+/// Clear TOS secrets from keyring and wipe region/bucket/endpoint in SQLite.
+pub fn clear_tos_credentials(conn: &Connection) -> CmdResult<Settings> {
+    credentials::clear_tos_credentials()?;
+    let mut current = get_settings(conn)?;
+    current.tos_region.clear();
+    current.tos_bucket.clear();
+    current.tos_endpoint.clear();
+    persist_settings_row(conn, &current)?;
+    get_settings(conn)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::db::pool::open_memory;
     use crate::services::credentials::reset_for_test;
 
     #[test]
     fn empty_db_returns_defaults() {
         reset_for_test();
-        let conn = open_memory().expect("memory db");
+        let conn = crate::db::pool::open_memory().expect("memory db");
         let settings = get_settings(&conn).expect("get");
         assert_eq!(settings.hotwords, Vec::<String>::new());
         assert_eq!(settings.context_text, "");
         assert!(!settings.doubao_configured);
         assert!(!settings.dashscope_configured);
+        assert!(!settings.tos_configured);
+        assert_eq!(settings.tos_region, "");
+        assert_eq!(settings.tos_bucket, "");
     }
 
     #[test]
     fn update_persists_hotwords_and_context() {
         reset_for_test();
-        let conn = open_memory().expect("memory db");
+        let conn = crate::db::pool::open_memory().expect("memory db");
         let updated = update_settings(
             &conn,
             SettingsUpdate {
@@ -190,7 +276,7 @@ mod tests {
     #[test]
     fn empty_hotword_rejects_without_write() {
         reset_for_test();
-        let conn = open_memory().expect("memory db");
+        let conn = crate::db::pool::open_memory().expect("memory db");
         update_settings(
             &conn,
             SettingsUpdate {
@@ -234,7 +320,7 @@ mod tests {
     #[test]
     fn partial_update_context_only() {
         reset_for_test();
-        let conn = open_memory().expect("memory db");
+        let conn = crate::db::pool::open_memory().expect("memory db");
         update_settings(
             &conn,
             SettingsUpdate {
@@ -262,7 +348,7 @@ mod tests {
     #[test]
     fn credentials_set_flip_configured_without_leaking_secrets() {
         reset_for_test();
-        let conn = open_memory().expect("memory db");
+        let conn = crate::db::pool::open_memory().expect("memory db");
         let updated = update_settings(
             &conn,
             SettingsUpdate {
@@ -286,7 +372,7 @@ mod tests {
     #[test]
     fn dashscope_configured_flag_without_leaking_key() {
         reset_for_test();
-        let conn = open_memory().expect("memory db");
+        let conn = crate::db::pool::open_memory().expect("memory db");
         let updated = update_settings(
             &conn,
             SettingsUpdate {
@@ -303,5 +389,45 @@ mod tests {
 
         let cleared = clear_dashscope_credentials(&conn).expect("clear");
         assert!(!cleared.dashscope_configured);
+    }
+
+    #[test]
+    fn tos_configured_requires_secrets_and_bucket_region() {
+        reset_for_test();
+        let conn = crate::db::pool::open_memory().expect("memory db");
+
+        let only_non_secret = update_settings(
+            &conn,
+            SettingsUpdate {
+                tos_region: Some("cn-beijing".into()),
+                tos_bucket: Some("meetly-audio".into()),
+                ..Default::default()
+            },
+        )
+        .expect("region/bucket");
+        assert!(!only_non_secret.tos_configured);
+
+        let with_secrets = update_settings(
+            &conn,
+            SettingsUpdate {
+                tos_access_key_id: Some("AKTEST".into()),
+                tos_secret_access_key: Some("SKTEST".into()),
+                ..Default::default()
+            },
+        )
+        .expect("secrets");
+        assert!(with_secrets.tos_configured);
+        assert_eq!(with_secrets.tos_region, "cn-beijing");
+        assert_eq!(with_secrets.tos_bucket, "meetly-audio");
+
+        let json = serde_json::to_string(&with_secrets).expect("ser");
+        assert!(!json.contains("AKTEST"));
+        assert!(!json.contains("SKTEST"));
+        assert!(json.contains("tos_configured"));
+
+        let cleared = clear_tos_credentials(&conn).expect("clear");
+        assert!(!cleared.tos_configured);
+        assert_eq!(cleared.tos_region, "");
+        assert_eq!(cleared.tos_bucket, "");
     }
 }

@@ -23,6 +23,7 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 # without them the crate falls back to an in-process mock that does not persist.
 keyring = { version = "3", features = ["apple-native", "windows-native", "sync-secret-service"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "blocking"] }
+ve-tos-rust-sdk = { version = "2.9.19", default-features = false, features = ["use-rustls"] }
 base64 = "0.22"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
