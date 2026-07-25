@@ -19,7 +19,9 @@ src/
 │   ├── home/
 │   └── settings/
 ├── features/
-│   └── settings-hotwords/
+│   ├── settings-hotwords/
+│   ├── settings-credentials/
+│   └── transcription-import/
 ├── shared/
 │   ├── ui/
 │   ├── hooks/

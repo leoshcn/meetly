@@ -19,7 +19,8 @@
   "pr_url": null,
   "subtasks": [],
   "children": [
-    "07-23-scaffold-tauri-shell"
+    "07-23-scaffold-tauri-shell",
+    "07-23-doubao-async-transcription"
   ],
   "parent": null,
   "relatedFiles": [],

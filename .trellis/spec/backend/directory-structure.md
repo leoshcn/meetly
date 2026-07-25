@@ -6,7 +6,7 @@
 
 ## Overview
 
-Backend logic lives in `src-tauri/src/`. Commands are thin; services own business rules; `db` owns SQLite.
+Backend logic lives in `src-tauri/src/`. Commands are thin; services own business rules; `db` owns SQLite; `providers` own external HTTP.
 
 ---
 
@@ -19,26 +19,37 @@ src-tauri/src/
 ├── error.rs
 ├── commands/
 │   ├── health.rs
-│   └── settings.rs
+│   ├── settings.rs
+│   ├── meetings.rs
+│   └── jobs.rs
 ├── services/
-│   └── settings_service.rs
+│   ├── settings_service.rs
+│   ├── meeting_service.rs
+│   ├── transcription_service.rs
+│   └── credentials.rs
+├── providers/
+│   └── doubao/
+│       ├── mod.rs
+│       ├── flash_client.rs
+│       └── hotwords.rs
 ├── db/
 │   ├── pool.rs
-│   └── migrations/001_settings.sql
+│   └── migrations/
+│       ├── 001_settings.sql
+│       └── 002_meetings_jobs.sql
 └── models/
-    └── settings.rs
+    ├── settings.rs
+    ├── meeting.rs
+    └── job.rs
 ```
-
-Evidence: `src-tauri/src/commands/settings.rs`, `src-tauri/src/services/settings_service.rs`, `src-tauri/src/error.rs`.
-
-Future (not yet present): `providers/doubao/`, `commands/meetings.rs`, `commands/jobs.rs`.
 
 ---
 
 ## Module Organization
 
 - **commands/** — IPC edge only.
-- **services/** — validation + persistence policy.
+- **services/** — validation + persistence + job orchestration.
+- **providers/** — Doubao (and future) HTTP clients; no SQLite.
 - **db/** — migrations + connection.
 - **models/** — serde DTOs shared across IPC.
 
@@ -46,5 +57,6 @@ Future (not yet present): `providers/doubao/`, `commands/meetings.rs`, `commands
 
 ## Anti-Patterns
 
-- Doubao calls inside command handlers (when provider lands, keep under `providers/`).
+- Doubao HTTP calls inside command handlers (keep under `providers/`).
 - Returning unstructured `String` errors from commands.
+- Storing Doubao secrets in SQLite.
