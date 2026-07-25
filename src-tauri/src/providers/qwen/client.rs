@@ -18,26 +18,67 @@ pub const MODEL_ID: &str = "qwen3.7-plus";
 pub struct SummaryGenerateInput {
     pub transcript: String,
     pub context_text: String,
+    pub language: String,
+}
+
+fn system_prompt_for_language(language: &str) -> &'static str {
+    match language {
+        "en" => concat!(
+            "You are a meeting-notes assistant. Based on the transcript and optional context, ",
+            "output a structured summary in English only. ",
+            "Even if the transcript or context is Chinese (or any other language), ",
+            "every string value in key_points, action_items, and decisions must be English — ",
+            "translate as needed; do not leave Chinese text in those arrays. ",
+            "You must return a JSON object with fields key_points, action_items, decisions; ",
+            "each field is an array of strings. Use an empty array when a section has no content."
+        ),
+        "zh-en" => concat!(
+            "你是会议纪要助手。根据转写文本与可选上下文，输出中英文双语结构化摘要。",
+            "必须返回一个 JSON 对象，字段为 key_points、action_items、decisions，",
+            "每个字段是字符串数组。每个字符串条目必须同时包含简体中文与英文，格式为「中文 / English」。",
+            "某块没有内容时返回空数组。"
+        ),
+        _ => concat!(
+            "你是会议纪要助手。根据转写文本与可选上下文，输出简体中文结构化摘要。",
+            "必须返回一个 JSON 对象，字段为 key_points、action_items、decisions，",
+            "每个字段是字符串数组。某块没有内容时返回空数组。"
+        ),
+    }
+}
+
+fn user_prompt_for_language(language: &str, context_section: &str, transcript: &str) -> String {
+    match language {
+        "en" => format!(
+            "Generate the summary JSON from the materials below. \
+             All key_points, action_items, and decisions strings must be English only \
+             (translate from Chinese if needed).\n\n\
+             [User context]\n{context_section}\n\n\
+             [Meeting transcript]\n{transcript}"
+        ),
+        _ => format!(
+            "请根据以下材料生成摘要 JSON。\n\n【用户上下文】\n{context_section}\n\n【会议转写】\n{transcript}"
+        ),
+    }
+}
+
+fn empty_context_placeholder(language: &str) -> &'static str {
+    match language {
+        "en" => "(no extra context)",
+        _ => "（无额外上下文）",
+    }
 }
 
 /// Build system + user messages. Always mentions JSON (required by DashScope json_object mode).
 pub fn build_summary_messages(input: &SummaryGenerateInput) -> Vec<Value> {
-    let system = concat!(
-        "你是会议纪要助手。根据转写文本与可选上下文，输出简体中文结构化摘要。",
-        "必须返回一个 JSON 对象，字段为 key_points、action_items、decisions，",
-        "每个字段是字符串数组。某块没有内容时返回空数组。"
-    );
+    let system = system_prompt_for_language(&input.language);
 
     let context_section = if input.context_text.trim().is_empty() {
-        "（无额外上下文）".to_string()
+        empty_context_placeholder(&input.language).to_string()
     } else {
         input.context_text.clone()
     };
 
-    let user = format!(
-        "请根据以下材料生成摘要 JSON。\n\n【用户上下文】\n{context_section}\n\n【会议转写】\n{}",
-        input.transcript
-    );
+    let user = user_prompt_for_language(&input.language, &context_section, &input.transcript);
 
     vec![
         json!({ "role": "system", "content": system }),
@@ -179,6 +220,7 @@ mod tests {
         let body = build_chat_body(&SummaryGenerateInput {
             transcript: "讨论了路线图".into(),
             context_text: "产品周会".into(),
+            language: "zh-CN".into(),
         });
         let messages = body["messages"].as_array().unwrap();
         let user = messages[1]["content"].as_str().unwrap();
@@ -186,6 +228,7 @@ mod tests {
         assert!(user.contains("讨论了路线图"));
         let system = messages[0]["content"].as_str().unwrap();
         assert!(system.to_ascii_lowercase().contains("json"));
+        assert!(system.contains("简体中文"));
         assert_eq!(body["model"], MODEL_ID);
         assert_eq!(body["response_format"]["type"], "json_object");
         assert_eq!(body["enable_thinking"], false);
@@ -196,10 +239,43 @@ mod tests {
         let body = build_chat_body(&SummaryGenerateInput {
             transcript: "hello".into(),
             context_text: "  ".into(),
+            language: "zh-CN".into(),
         });
         let user = body["messages"][1]["content"].as_str().unwrap();
         assert!(user.contains("（无额外上下文）"));
         assert!(user.contains("hello"));
+    }
+
+    #[test]
+    fn prompt_en_and_bilingual() {
+        let en = build_chat_body(&SummaryGenerateInput {
+            transcript: "讨论了发布计划".into(),
+            context_text: "".into(),
+            language: "en".into(),
+        });
+        let en_system = en["messages"][0]["content"].as_str().unwrap();
+        let en_user = en["messages"][1]["content"].as_str().unwrap();
+        assert!(en_system.contains("English only"));
+        assert!(en_system.contains("translate"));
+        assert!(en_user.contains("English only"));
+        assert!(en_user.contains("[Meeting transcript]"));
+        assert!(en_user.contains("(no extra context)"));
+        assert!(en_user.contains("讨论了发布计划"));
+        assert!(!en_user.contains("请根据以下材料"));
+
+        let bi = build_chat_body(&SummaryGenerateInput {
+            transcript: "t".into(),
+            context_text: "".into(),
+            language: "zh-en".into(),
+        });
+        assert!(bi["messages"][0]["content"]
+            .as_str()
+            .unwrap()
+            .contains("中文 / English"));
+        assert!(bi["messages"][1]["content"]
+            .as_str()
+            .unwrap()
+            .contains("请根据以下材料"));
     }
 
     #[test]

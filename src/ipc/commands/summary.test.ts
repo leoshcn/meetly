@@ -10,20 +10,21 @@ describe("summary commands", () => {
   it("summaryGenerate invokes summary_generate", async () => {
     const summary = {
       meeting_id: "m1",
-      key_points: ["a"],
-      action_items: [],
-      decisions: ["d"],
-      language: "zh-CN" as const,
-      created_at: "2026-01-01T00:00:00Z",
+      key_points: [] as string[],
+      action_items: [] as string[],
+      decisions: [] as string[],
+      language: "en" as const,
+      created_at: "t",
     };
     const invoke = vi.fn().mockResolvedValue(summary);
     __setInvokeForTests(invoke);
 
-    const result = await summaryGenerate("m1");
+    const result = await summaryGenerate("m1", "en");
     expect(invoke).toHaveBeenCalledWith("summary_generate", {
       meeting_id: "m1",
+      language: "en",
     });
-    expect(result.key_points).toEqual(["a"]);
+    expect(result).toEqual(summary);
   });
 
   it("summaryGet invokes summary_get", async () => {
@@ -33,7 +34,7 @@ describe("summary commands", () => {
       action_items: [],
       decisions: [],
       language: "zh-CN",
-      created_at: "2026-01-01T00:00:00Z",
+      created_at: "t",
     });
     __setInvokeForTests(invoke);
     await summaryGet("m1");

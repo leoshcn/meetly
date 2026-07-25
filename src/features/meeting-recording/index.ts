@@ -1,0 +1,1 @@
+export { MeetingRecordingPanel } from "./MeetingRecording";

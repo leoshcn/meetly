@@ -1,0 +1,3 @@
+-- Transcript speaker diarization columns (applied idempotently via ensure_transcript_speaker_columns).
+-- segments_json: JSON array of { speaker_id, text }
+-- speaker_names_json: JSON object map speaker_id -> display name

@@ -7,6 +7,8 @@ import {
   settingsUpdate,
   type AppError,
 } from "../../ipc";
+import { friendlyErrorMessage } from "../../shared/lib";
+import { Button } from "../../shared/ui";
 import styles from "./SettingsCredentials.module.css";
 
 export function SettingsCredentialsPanel() {
@@ -64,7 +66,7 @@ export function SettingsCredentialsPanel() {
       } catch (err) {
         if (!cancelled) {
           const appErr = err as AppError;
-          setDoubaoError(appErr.message ?? "Failed to load credentials status");
+          setDoubaoError(friendlyErrorMessage(appErr));
           setStatus("idle");
         }
       }
@@ -93,7 +95,7 @@ export function SettingsCredentialsPanel() {
       setDoubaoSavedHint(true);
     } catch (err) {
       const appErr = err as AppError;
-      setDoubaoError(appErr.message ?? "Save failed");
+      setDoubaoError(friendlyErrorMessage(appErr));
     } finally {
       setStatus("idle");
     }
@@ -111,7 +113,7 @@ export function SettingsCredentialsPanel() {
       setDoubaoSavedHint(true);
     } catch (err) {
       const appErr = err as AppError;
-      setDoubaoError(appErr.message ?? "Clear failed");
+      setDoubaoError(friendlyErrorMessage(appErr));
     } finally {
       setStatus("idle");
     }
@@ -136,7 +138,7 @@ export function SettingsCredentialsPanel() {
       setDashscopeSavedHint(true);
     } catch (err) {
       const appErr = err as AppError;
-      setDashscopeError(appErr.message ?? "Save failed");
+      setDashscopeError(friendlyErrorMessage(appErr));
     } finally {
       setStatus("idle");
     }
@@ -153,7 +155,7 @@ export function SettingsCredentialsPanel() {
       setDashscopeSavedHint(true);
     } catch (err) {
       const appErr = err as AppError;
-      setDashscopeError(appErr.message ?? "Clear failed");
+      setDashscopeError(friendlyErrorMessage(appErr));
     } finally {
       setStatus("idle");
     }
@@ -186,7 +188,7 @@ export function SettingsCredentialsPanel() {
       setTosSavedHint(true);
     } catch (err) {
       const appErr = err as AppError;
-      setTosError(appErr.message ?? "Save failed");
+      setTosError(friendlyErrorMessage(appErr));
     } finally {
       setStatus("idle");
     }
@@ -204,7 +206,7 @@ export function SettingsCredentialsPanel() {
       setTosSavedHint(true);
     } catch (err) {
       const appErr = err as AppError;
-      setTosError(appErr.message ?? "Clear failed");
+      setTosError(friendlyErrorMessage(appErr));
     } finally {
       setStatus("idle");
     }
@@ -269,17 +271,16 @@ export function SettingsCredentialsPanel() {
           </label>
         </div>
         <div className={styles.actions}>
-          <button type="button" onClick={saveDoubao} disabled={!canSaveDoubao}>
+          <Button onClick={saveDoubao} disabled={!canSaveDoubao}>
             {status === "saving" ? "保存中…" : "保存凭证"}
-          </button>
-          <button
-            type="button"
-            className={styles.secondary}
+          </Button>
+          <Button
+            variant="secondary"
             onClick={clearDoubao}
             disabled={!doubaoConfigured || status === "saving" || status === "loading"}
           >
             清除凭证
-          </button>
+          </Button>
           {doubaoSavedHint && <span className={styles.ok}>已更新</span>}
         </div>
         {doubaoError && <p className={styles.error}>{doubaoError}</p>}
@@ -354,12 +355,11 @@ export function SettingsCredentialsPanel() {
           </label>
         </div>
         <div className={styles.actions}>
-          <button type="button" onClick={saveTos} disabled={!canSaveTos}>
+          <Button onClick={saveTos} disabled={!canSaveTos}>
             {status === "saving" ? "保存中…" : "保存 TOS 配置"}
-          </button>
-          <button
-            type="button"
-            className={styles.secondary}
+          </Button>
+          <Button
+            variant="secondary"
             onClick={clearTos}
             disabled={
               (!tosConfigured && !tosRegion && !tosBucket) ||
@@ -368,7 +368,7 @@ export function SettingsCredentialsPanel() {
             }
           >
             清除 TOS 配置
-          </button>
+          </Button>
           {tosSavedHint && <span className={styles.ok}>已更新</span>}
         </div>
         {tosError && <p className={styles.error}>{tosError}</p>}
@@ -400,23 +400,18 @@ export function SettingsCredentialsPanel() {
           </label>
         </div>
         <div className={styles.actions}>
-          <button
-            type="button"
-            onClick={saveDashscope}
-            disabled={!canSaveDashscope}
-          >
+          <Button onClick={saveDashscope} disabled={!canSaveDashscope}>
             {status === "saving" ? "保存中…" : "保存 API Key"}
-          </button>
-          <button
-            type="button"
-            className={styles.secondary}
+          </Button>
+          <Button
+            variant="secondary"
             onClick={clearDashscope}
             disabled={
               !dashscopeConfigured || status === "saving" || status === "loading"
             }
           >
             清除 API Key
-          </button>
+          </Button>
           {dashscopeSavedHint && <span className={styles.ok}>已更新</span>}
         </div>
         {dashscopeError && <p className={styles.error}>{dashscopeError}</p>}

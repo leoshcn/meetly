@@ -1,0 +1,2 @@
+-- Recording directory override (idempotent add applied in pool.rs).
+-- Placeholder so migration numbering is visible in tree; see ensure_recording_dir_column.

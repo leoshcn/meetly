@@ -1,10 +1,30 @@
 :root {
-  color: #1a1f24;
-  background:
-    radial-gradient(1200px 600px at 10% -10%, #d9e7f5 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, #e8f0e6 0%, transparent 50%),
-    #f7f8fa;
-  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --paper: #f3f1ec;
+  --ink: #14181c;
+  --ink-muted: #5a636c;
+  --line: #d8d3c8;
+  --panel: #fffefb;
+  --accent: #1f5c57;
+  --accent-soft: rgba(31, 92, 87, 0.12);
+  --danger: #a33b2b;
+  --ok: #2f6b3a;
+  --warn: #8a6a1f;
+
+  --font-display: "Syne", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-ui: "IBM Plex Sans", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  color: var(--ink);
+  background: var(--paper);
+  font-family: var(--font-ui);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -18,85 +38,134 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background: var(--paper);
 }
 
 #root {
   min-height: 100vh;
 }
 
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
 .app-shell {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--paper);
 }
 
 .app-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 0.85rem 1.5rem;
-  border-bottom: 1px solid #dce2e8;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(8px);
+  gap: var(--space-4);
+  padding: 0.7rem 1.25rem;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  backdrop-filter: blur(10px);
+  position: relative;
+  z-index: 2;
 }
 
 .app-header .brand {
   border: none;
   background: transparent;
-  font: inherit;
-  font-size: 1.25rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: -0.02em;
   cursor: pointer;
-  color: #15202b;
+  color: var(--ink);
+  padding: 0.15rem 0.25rem;
+  border-radius: var(--radius-sm);
 }
 
-.app-header nav {
+.app-header .brand-meta {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink-muted);
+  margin-left: 0.55rem;
+  letter-spacing: 0;
+}
+
+.app-header-actions {
   display: flex;
-  gap: 0.35rem;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.app-header nav button {
-  border: 1px solid transparent;
+.app-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
   background: transparent;
-  font: inherit;
-  padding: 0.35rem 0.75rem;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #3d4752;
+  pointer-events: none;
 }
 
-.app-header nav button.active {
-  background: #eef2f6;
-  border-color: #d5dde5;
-  color: #15202b;
+.app-progress-bar {
+  height: 100%;
+  width: 35%;
+  background: var(--accent);
+  animation: meetly-indeterminate 1.2s ease-in-out infinite;
 }
 
 .app-main {
   flex: 1;
-  padding: 1.75rem 1.5rem 2.5rem;
-  max-width: 52rem;
+  padding: 0;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.app-main h1 {
-  margin: 0 0 0.5rem;
-  font-size: 1.75rem;
+@keyframes meetly-indeterminate {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
 }
 
-.app-main > div > p {
-  margin: 0 0 1.25rem;
-  color: #5c6570;
+@keyframes meetly-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.app-main > div > button {
-  font: inherit;
-  cursor: pointer;
-  border: 1px solid #2f3a45;
-  background: #2f3a45;
-  color: #fff;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
+.meetly-fade-up {
+  animation: meetly-fade-up 280ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-progress-bar {
+    animation: none;
+    width: 100%;
+    opacity: 0.7;
+  }
+
+  .meetly-fade-up {
+    animation: none !important;
+  }
 }

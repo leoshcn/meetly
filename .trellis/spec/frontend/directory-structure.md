@@ -21,8 +21,12 @@ src/
 ├── features/
 │   ├── settings-hotwords/
 │   ├── settings-credentials/
+│   ├── settings-recording/
+│   ├── settings-ffmpeg/
+│   ├── meeting-recording/
 │   ├── transcription-import/
-│   └── meeting-summary/
+│   ├── meeting-summary/
+│   └── meeting-sidebar/
 ├── shared/
 │   ├── ui/
 │   ├── hooks/
@@ -35,7 +39,7 @@ src/
 └── main.tsx
 ```
 
-Evidence: `src/app/AppShell.tsx`, `src/pages/settings/SettingsPage.tsx`, `src/features/settings-hotwords/SettingsHotwords.tsx`, `src/features/meeting-summary/`, `src/ipc/client.ts`.
+Evidence: `src/app/AppShell.tsx`, `src/pages/settings/SettingsPage.tsx`, `src/features/settings-hotwords/SettingsHotwords.tsx`, `src/features/meeting-summary/`, `src/features/meeting-sidebar/`, `src/ipc/client.ts`.
 
 ---
 

@@ -1,3 +1,4 @@
+import { Button } from "../../shared/ui";
 import styles from "./SettingsHotwords.module.css";
 
 type Props = {
@@ -15,9 +16,13 @@ export function HotwordList({ words, onRemove }: Props) {
       {words.map((word, index) => (
         <li key={`${word}-${index}`}>
           <span>{word}</span>
-          <button type="button" onClick={() => onRemove(index)} aria-label={`移除 ${word}`}>
+          <Button
+            variant="ghost"
+            onClick={() => onRemove(index)}
+            aria-label={`移除 ${word}`}
+          >
             移除
-          </button>
+          </Button>
         </li>
       ))}
     </ul>

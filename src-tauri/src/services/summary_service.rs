@@ -2,7 +2,9 @@ use chrono::Utc;
 use rusqlite::Connection;
 
 use crate::error::{AppErrorDto, CmdResult};
-use crate::models::{Summary, SUMMARY_LANGUAGE_ZH_CN};
+use crate::models::{
+    is_supported_summary_language, Summary,
+};
 use crate::providers::qwen::{
     HttpQwenClient, SummaryGenerateInput, SummaryGenerator,
 };
@@ -99,8 +101,14 @@ fn require_transcript(conn: &Connection, meeting_id: &str) -> CmdResult<String> 
 pub fn generate_summary(
     conn: &Connection,
     meeting_id: &str,
+    language: &str,
     generator: &dyn SummaryGenerator,
 ) -> CmdResult<Summary> {
+    if !is_supported_summary_language(language) {
+        return Err(AppErrorDto::invalid_argument(
+            "Unsupported summary language; use zh-CN, en, or zh-en",
+        ));
+    }
     let _ = meeting_service::get_meeting(conn, meeting_id)?;
     let transcript = require_transcript(conn, meeting_id)?;
     let settings = settings_service::get_settings(conn)?;
@@ -111,6 +119,7 @@ pub fn generate_summary(
         &SummaryGenerateInput {
             transcript,
             context_text: settings.context_text,
+            language: language.to_string(),
         },
     )?;
 
@@ -119,7 +128,7 @@ pub fn generate_summary(
         key_points: content.key_points,
         action_items: content.action_items,
         decisions: content.decisions,
-        language: SUMMARY_LANGUAGE_ZH_CN.to_string(),
+        language: language.to_string(),
         created_at: Utc::now().to_rfc3339(),
     };
     upsert_summary(conn, &summary)?;
@@ -127,9 +136,13 @@ pub fn generate_summary(
 }
 
 /// Production entry: real HTTP Qwen client.
-pub fn generate_summary_http(conn: &Connection, meeting_id: &str) -> CmdResult<Summary> {
+pub fn generate_summary_http(
+    conn: &Connection,
+    meeting_id: &str,
+    language: &str,
+) -> CmdResult<Summary> {
     let client = HttpQwenClient::new()?;
-    generate_summary(conn, meeting_id, &client)
+    generate_summary(conn, meeting_id, language, &client)
 }
 
 #[cfg(test)]
@@ -198,7 +211,7 @@ mod tests {
             last_context: Mutex::new(None),
         };
 
-        let summary = generate_summary(&conn, &meeting_id, &stub).unwrap();
+        let summary = generate_summary(&conn, &meeting_id, "zh-CN", &stub).unwrap();
         assert_eq!(summary.language, "zh-CN");
         assert_eq!(summary.key_points, vec!["发布计划"]);
         assert_eq!(summary.decisions, vec!["下周上线"]);
@@ -228,7 +241,7 @@ mod tests {
             result: Mutex::new(Ok(SummaryContent::default())),
             last_context: Mutex::new(None),
         };
-        generate_summary(&conn, &meeting_id, &stub).unwrap();
+        generate_summary(&conn, &meeting_id, "zh-CN", &stub).unwrap();
         assert_eq!(
             stub.last_context.lock().unwrap().as_deref(),
             Some("产品周会")
@@ -249,7 +262,7 @@ mod tests {
             result: Mutex::new(Ok(SummaryContent::default())),
             last_context: Mutex::new(None),
         };
-        let err = generate_summary(&conn, &meeting.id, &stub).expect_err("not ready");
+        let err = generate_summary(&conn, &meeting.id, "zh-CN", &stub).expect_err("not ready");
         assert_eq!(err.code, "SUMMARY_NOT_READY");
         let _ = std::fs::remove_file(path);
     }
@@ -264,7 +277,7 @@ mod tests {
             result: Mutex::new(Ok(SummaryContent::default())),
             last_context: Mutex::new(None),
         };
-        let err = generate_summary(&conn, &meeting_id, &stub).expect_err("no key");
+        let err = generate_summary(&conn, &meeting_id, "zh-CN", &stub).expect_err("no key");
         assert_eq!(err.code, "SUMMARY_NOT_CONFIGURED");
         let _ = std::fs::remove_file(path);
     }
@@ -282,7 +295,7 @@ mod tests {
             ))),
             last_context: Mutex::new(None),
         };
-        let err = generate_summary(&conn, &meeting_id, &stub).expect_err("parse");
+        let err = generate_summary(&conn, &meeting_id, "zh-CN", &stub).expect_err("parse");
         assert_eq!(err.code, "SUMMARY_PROVIDER_ERROR");
         let missing = get_summary(&conn, &meeting_id).expect_err("no row");
         assert_eq!(missing.code, "NOT_FOUND");

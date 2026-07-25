@@ -23,12 +23,20 @@ Applies when adding or changing any `#[tauri::command]`, frontend `invoke` wrapp
 | `settings_clear_dashscope_credentials` | (none) | `Settings` | same |
 | `settings_clear_tos_credentials` | (none) | `Settings` | same |
 | `meetings_create_from_file` | `{ path: string }` | `Meeting` | `src-tauri/src/commands/meetings.rs` |
+| `meetings_list` | (none) | `Meeting[]` (created_at DESC) | same |
 | `meetings_get` | `{ meeting_id: string }` | `Meeting` | same |
+| `meetings_rename` | `{ meeting_id: string, title: string }` | `Meeting` | same |
+| `meetings_delete` | `{ meeting_id: string }` | `void` | same |
 | `meetings_get_transcript` | `{ meeting_id: string }` | `Transcript` | same |
+| `meetings_update_speakers` | `{ meeting_id: string, speaker_names: Record<string, string> }` | `Transcript` | same |
 | `jobs_start_transcription` | `{ meeting_id: string }` | `Job` | `src-tauri/src/commands/jobs.rs` |
 | `jobs_get` | `{ job_id: string }` | `Job` | same |
-| `summary_generate` | `{ meeting_id: string }` | `Summary` | `src-tauri/src/commands/summary.rs` |
+| `summary_generate` | `{ meeting_id: string, language: "zh-CN" \| "en" \| "zh-en" }` | `Summary` | `src-tauri/src/commands/summary.rs` |
 | `summary_get` | `{ meeting_id: string }` | `Summary` | same |
+| `record_list_input_devices` | (none) | `{ devices: [{ id, name, is_default }], default_id }` | `src-tauri/src/commands/recording.rs` |
+| `record_start` | `{ device_id?: string \| null }` | `{ path, device_name, output_device_name }` — starts mic + WASAPI loopback mix | same |
+| `record_stop` | (none) | `{ path, duration_ms }` | same |
+| `record_status` | (none) | `{ state, path, started_at, device_name, output_device_name, mic_level, system_level }` — levels are smoothed \[0,1\] capture meters | same |
 
 ### Envelope
 
@@ -49,6 +57,10 @@ type Settings = {
   tos_bucket: string;
   /** Optional custom endpoint; empty → default `https://tos-{region}.volces.com`. */
   tos_endpoint: string;
+  /** User override; empty → default Documents/Meetly/Recordings. */
+  recording_dir: string;
+  /** Effective path after resolving empty default. */
+  recording_dir_resolved: string;
 };
 type SettingsUpdate = {
   hotwords?: string[];
@@ -66,6 +78,8 @@ type SettingsUpdate = {
   tos_region?: string;
   tos_bucket?: string;
   tos_endpoint?: string;
+  /** Absolute path or empty to reset default. */
+  recording_dir?: string;
 };
 type Meeting = {
   id: string;
@@ -76,6 +90,8 @@ type Meeting = {
 type Transcript = {
   meeting_id: string;
   text: string;
+  segments: { speaker_id: string; text: string }[];
+  speaker_names: Record<string, string>;
 };
 type Job = {
   id: string;
@@ -92,11 +108,15 @@ type Summary = {
   key_points: string[];
   action_items: string[];
   decisions: string[];
-  language: "zh-CN";
+  language: "zh-CN" | "en" | "zh-en";
   created_at: string;
 };
 ```
 
+`meetings_rename` rejects empty/whitespace titles (`INVALID_ARGUMENT`).  
+`meetings_delete` removes `summaries` / `transcripts` / `jobs` / `meetings` rows; does **not** delete the local audio file.  
+`meetings_update_speakers` re-renders `text`, persists `speaker_names`, deletes that meeting’s summary; fails with `TRANSCRIPT_NO_SPEAKERS` when segments are empty.  
+`summary_generate` requires supported `language`; unsupported → `INVALID_ARGUMENT`.
 ---
 
 ## Contracts
@@ -129,6 +149,7 @@ type Summary = {
 
 - `settings` singleton (`id = 1`): `hotwords`, `context_text`, plus TOS non-secrets — `001_settings.sql` + idempotent `004` / `ensure_tos_settings_columns`
 - `meetings`, `jobs`, `transcripts` — `002_meetings_jobs.sql` (`jobs.provider_task_id` used for Doubao async request id)
+- `transcripts.segments_json` / `speaker_names_json` — idempotent via `ensure_transcript_speaker_columns` (`005_transcript_speakers.sql`)
 - `summaries` — `003_summaries.sql`
 
 ### Size caps (dual-path)

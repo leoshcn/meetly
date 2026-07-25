@@ -5,6 +5,8 @@ import {
   type AppError,
   type Settings,
 } from "../../ipc";
+import { friendlyErrorMessage } from "../../shared/lib";
+import { Button } from "../../shared/ui";
 import { HotwordList } from "./HotwordList";
 import styles from "./SettingsHotwords.module.css";
 
@@ -33,7 +35,7 @@ export function SettingsHotwordsPanel() {
       } catch (err) {
         if (!cancelled) {
           const appErr = err as AppError;
-          setError(appErr.message ?? "Failed to load settings");
+          setError(friendlyErrorMessage(appErr));
           setStatus("idle");
         }
       }
@@ -71,7 +73,7 @@ export function SettingsHotwordsPanel() {
       setSavedHint(true);
     } catch (err) {
       const appErr = err as AppError;
-      setError(appErr.message ?? "Save failed");
+      setError(friendlyErrorMessage(appErr));
     } finally {
       setStatus("idle");
     }
@@ -97,9 +99,9 @@ export function SettingsHotwordsPanel() {
               }
             }}
           />
-          <button type="button" onClick={addHotword}>
+          <Button variant="secondary" onClick={addHotword}>
             添加
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -117,9 +119,12 @@ export function SettingsHotwordsPanel() {
       </div>
 
       <div className={styles.actions}>
-        <button type="button" onClick={save} disabled={status === "saving" || status === "loading"}>
+        <Button
+          onClick={() => void save()}
+          disabled={status === "saving" || status === "loading"}
+        >
           {status === "saving" ? "保存中…" : "保存设置"}
-        </button>
+        </Button>
         {savedHint && <span className={styles.ok}>已保存</span>}
       </div>
       {error && <p className={styles.error}>{error}</p>}

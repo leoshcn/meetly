@@ -10,12 +10,13 @@ use crate::AppState;
 pub fn summary_generate(
     state: State<'_, AppState>,
     meeting_id: String,
+    language: String,
 ) -> CmdResult<Summary> {
     let conn = state
         .db
         .lock()
         .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
-    services::generate_summary_http(&conn, &meeting_id)
+    services::generate_summary_http(&conn, &meeting_id, &language)
 }
 
 #[tauri::command(rename_all = "snake_case")]

@@ -1,0 +1,86 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.1rem 1.15rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--ink-muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.path {
+  color: var(--ink);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.86rem;
+  color: var(--ink);
+}
+
+.fields input {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.65rem;
+  font: inherit;
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.actions :global(button) {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.ok {
+  color: var(--ok);
+  font-size: 0.85rem;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.86rem;
+}

@@ -106,6 +106,42 @@ impl AppErrorDto {
     pub fn summary_provider_error(message: impl Into<String>) -> Self {
         Self::new("SUMMARY_PROVIDER_ERROR", message)
     }
+
+    pub fn invalid_argument(message: impl Into<String>) -> Self {
+        Self::new("INVALID_ARGUMENT", message)
+    }
+
+    pub fn transcript_no_speakers() -> Self {
+        Self::new(
+            "TRANSCRIPT_NO_SPEAKERS",
+            "Transcript has no speaker segments to rename",
+        )
+    }
+
+    pub fn record_no_device() -> Self {
+        Self::new(
+            "RECORD_NO_DEVICE",
+            "No audio input device is available",
+        )
+    }
+
+    pub fn record_busy() -> Self {
+        Self::new(
+            "RECORD_BUSY",
+            "A recording is already in progress",
+        )
+    }
+
+    pub fn record_not_active() -> Self {
+        Self::new(
+            "RECORD_NOT_ACTIVE",
+            "No recording is in progress",
+        )
+    }
+
+    pub fn record_device_error(message: impl Into<String>) -> Self {
+        Self::new("RECORD_DEVICE_ERROR", message)
+    }
 }
 
 impl From<rusqlite::Error> for AppErrorDto {

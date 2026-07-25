@@ -19,6 +19,10 @@ pub struct Settings {
     pub tos_bucket: String,
     /// Optional custom TOS endpoint; empty means default `https://tos-{region}.volces.com`.
     pub tos_endpoint: String,
+    /// User override for recording output directory. Empty → use default Documents/Meetly/Recordings.
+    pub recording_dir: String,
+    /// Effective recording directory after resolving the empty-default rule.
+    pub recording_dir_resolved: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -41,4 +45,6 @@ pub struct SettingsUpdate {
     pub tos_bucket: Option<String>,
     /// Optional custom TOS endpoint.
     pub tos_endpoint: Option<String>,
+    /// Recording output directory override; empty string resets to default.
+    pub recording_dir: Option<String>,
 }

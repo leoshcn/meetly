@@ -1,2 +1,2 @@
-/** Shared UI primitives — populated as features grow. */
-export {};
+export { Button } from "./Button";
+export { IconButton, SettingsGearIcon } from "./IconButton";

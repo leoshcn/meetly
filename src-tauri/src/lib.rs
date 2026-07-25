@@ -11,9 +11,11 @@ use rusqlite::Connection;
 use tauri::Manager;
 
 pub use error::{AppErrorDto, CmdResult};
+use services::recording_service::RecordingSession;
 
 pub struct AppState {
     pub db: Mutex<Connection>,
+    pub recording: RecordingSession,
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -33,6 +35,7 @@ pub fn run() {
                 .map_err(|e| format!("Failed to open database: {}", e.message))?;
             app.manage(AppState {
                 db: Mutex::new(conn),
+                recording: RecordingSession::spawn(),
             });
             Ok(())
         })
@@ -44,12 +47,22 @@ pub fn run() {
             commands::settings::settings_clear_dashscope_credentials,
             commands::settings::settings_clear_tos_credentials,
             commands::meetings::meetings_create_from_file,
+            commands::meetings::meetings_list,
             commands::meetings::meetings_get,
+            commands::meetings::meetings_rename,
+            commands::meetings::meetings_delete,
             commands::meetings::meetings_get_transcript,
+            commands::meetings::meetings_update_speakers,
             commands::jobs::jobs_start_transcription,
             commands::jobs::jobs_get,
             commands::summary::summary_generate,
             commands::summary::summary_get,
+            commands::recording::record_list_input_devices,
+            commands::recording::record_start,
+            commands::recording::record_stop,
+            commands::recording::record_status,
+            commands::recording::ffmpeg_status,
+            commands::recording::ffmpeg_download,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

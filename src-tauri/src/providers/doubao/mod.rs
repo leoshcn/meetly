@@ -1,6 +1,9 @@
+pub mod asr_parse;
 pub mod async_client;
 pub mod flash_client;
 pub mod hotwords;
+
+pub use asr_parse::{parse_asr_transcript, ParsedAsrTranscript};
 
 pub use async_client::{
     poll_until_done, AsyncRecognizer, AsyncSubmitInput, HttpAsyncClient, ASYNC_POLL_INTERVAL,

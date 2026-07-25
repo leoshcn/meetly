@@ -1,2 +1,1 @@
-/** Shared lib helpers — populated as features grow. */
-export {};
+export { friendlyErrorMessage, errorTitle } from "./formatError";

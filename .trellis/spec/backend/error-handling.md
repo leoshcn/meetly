@@ -28,7 +28,7 @@ export type AppError = { code: string; message: string; details?: unknown };
 export function normalizeError(err: unknown): AppError;
 ```
 
-Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_configured`, `asr_payload_too_large`, `asr_provider_error`, `asr_timeout`, `tos_not_configured`, `tos_upload_error`, `io_error`, `summary_not_ready`, `summary_not_configured`, `summary_provider_error`.
+Helpers: `settings_invalid`, `invalid_argument`, `db_error`, `internal`, `not_found`, `asr_not_configured`, `asr_payload_too_large`, `asr_provider_error`, `asr_timeout`, `tos_not_configured`, `tos_upload_error`, `io_error`, `summary_not_ready`, `summary_not_configured`, `summary_provider_error`, `transcript_no_speakers`, `record_no_device`, `record_busy`, `record_not_active`, `record_device_error`.
 
 ---
 
@@ -48,7 +48,7 @@ Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_confi
 
 | Fault | Code | UI |
 |-------|------|-----|
-| Validation | `SETTINGS_INVALID` | Inline / form |
+| Validation | `SETTINGS_INVALID` / `INVALID_ARGUMENT` | Inline / form |
 | SQLite | `DB_ERROR` | Toast |
 | Missing ASR credentials | `ASR_NOT_CONFIGURED` | Prompt to settings |
 | File too large (> 512 MiB) | `ASR_PAYLOAD_TOO_LARGE` | Inline / job error |
@@ -60,6 +60,11 @@ Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_confi
 | Transcript not ready for summary | `SUMMARY_NOT_READY` | Inline / prompt to finish ASR |
 | Missing DashScope key | `SUMMARY_NOT_CONFIGURED` | Prompt to settings |
 | Qwen API / invalid JSON | `SUMMARY_PROVIDER_ERROR` | Inline |
+| No speaker segments to rename | `TRANSCRIPT_NO_SPEAKERS` | Inline |
+| No audio input device | `RECORD_NO_DEVICE` | Inline |
+| Recording already active | `RECORD_BUSY` | Inline |
+| Stop with no active recording | `RECORD_NOT_ACTIVE` | Inline |
+| Device / stream failure | `RECORD_DEVICE_ERROR` | Inline / settings |
 | Unknown id | `NOT_FOUND` | Inline |
 | Unexpected | `INTERNAL` | Generic toast |
 

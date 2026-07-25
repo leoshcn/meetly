@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
@@ -6,7 +7,10 @@ use rusqlite::Connection;
 use uuid::Uuid;
 
 use crate::error::{AppErrorDto, CmdResult};
-use crate::models::{Meeting, Transcript};
+use crate::models::{
+    render_transcript_text, Meeting, Transcript, TranscriptSegment,
+};
+use crate::providers::doubao::parse_asr_transcript;
 
 /// Flash/base64 ASR path cap (20 MiB). Files at or below this size do not need TOS.
 pub const FLASH_MAX_AUDIO_BYTES: u64 = 20 * 1024 * 1024;
@@ -57,6 +61,32 @@ pub fn create_from_file(conn: &Connection, path: &str) -> CmdResult<Meeting> {
     Ok(meeting)
 }
 
+pub fn list_meetings(conn: &Connection) -> CmdResult<Vec<Meeting>> {
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, source_path, title, created_at FROM meetings
+             ORDER BY created_at DESC",
+        )
+        .map_err(AppErrorDto::from)?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(Meeting {
+                id: row.get(0)?,
+                source_path: row.get(1)?,
+                title: row.get(2)?,
+                created_at: row.get(3)?,
+            })
+        })
+        .map_err(AppErrorDto::from)?;
+
+    let mut meetings = Vec::new();
+    for row in rows {
+        meetings.push(row.map_err(AppErrorDto::from)?);
+    }
+    Ok(meetings)
+}
+
 pub fn get_meeting(conn: &Connection, meeting_id: &str) -> CmdResult<Meeting> {
     let mut stmt = conn
         .prepare(
@@ -80,19 +110,79 @@ pub fn get_meeting(conn: &Connection, meeting_id: &str) -> CmdResult<Meeting> {
     })
 }
 
+pub fn rename_meeting(conn: &Connection, meeting_id: &str, title: &str) -> CmdResult<Meeting> {
+    let title = title.trim();
+    if title.is_empty() {
+        return Err(AppErrorDto::invalid_argument("Meeting title cannot be empty"));
+    }
+    let _ = get_meeting(conn, meeting_id)?;
+    conn.execute(
+        "UPDATE meetings SET title = ?1 WHERE id = ?2",
+        rusqlite::params![title, meeting_id],
+    )
+    .map_err(AppErrorDto::from)?;
+    get_meeting(conn, meeting_id)
+}
+
+/// Hard-delete meeting and related rows. Does **not** delete the audio file on disk.
+pub fn delete_meeting(conn: &Connection, meeting_id: &str) -> CmdResult<()> {
+    let _ = get_meeting(conn, meeting_id)?;
+    conn.execute(
+        "DELETE FROM summaries WHERE meeting_id = ?1",
+        rusqlite::params![meeting_id],
+    )
+    .map_err(AppErrorDto::from)?;
+    conn.execute(
+        "DELETE FROM transcripts WHERE meeting_id = ?1",
+        rusqlite::params![meeting_id],
+    )
+    .map_err(AppErrorDto::from)?;
+    conn.execute(
+        "DELETE FROM jobs WHERE meeting_id = ?1",
+        rusqlite::params![meeting_id],
+    )
+    .map_err(AppErrorDto::from)?;
+    conn.execute(
+        "DELETE FROM meetings WHERE id = ?1",
+        rusqlite::params![meeting_id],
+    )
+    .map_err(AppErrorDto::from)?;
+    Ok(())
+}
+
+fn decode_segments(json: Option<String>) -> CmdResult<Vec<TranscriptSegment>> {
+    match json {
+        None => Ok(vec![]),
+        Some(s) if s.trim().is_empty() => Ok(vec![]),
+        Some(s) => serde_json::from_str(&s).map_err(AppErrorDto::from),
+    }
+}
+
+fn decode_speaker_names(json: Option<String>) -> CmdResult<BTreeMap<String, String>> {
+    match json {
+        None => Ok(BTreeMap::new()),
+        Some(s) if s.trim().is_empty() => Ok(BTreeMap::new()),
+        Some(s) => serde_json::from_str(&s).map_err(AppErrorDto::from),
+    }
+}
+
 pub fn get_transcript(conn: &Connection, meeting_id: &str) -> CmdResult<Transcript> {
-    // Ensure meeting exists.
     let _ = get_meeting(conn, meeting_id)?;
 
     let mut stmt = conn
-        .prepare("SELECT meeting_id, text FROM transcripts WHERE meeting_id = ?1")
+        .prepare(
+            "SELECT meeting_id, text, segments_json, speaker_names_json
+             FROM transcripts WHERE meeting_id = ?1",
+        )
         .map_err(AppErrorDto::from)?;
 
     stmt.query_row(rusqlite::params![meeting_id], |row| {
-        Ok(Transcript {
-            meeting_id: row.get(0)?,
-            text: row.get(1)?,
-        })
+        Ok((
+            row.get::<_, String>(0)?,
+            row.get::<_, String>(1)?,
+            row.get::<_, Option<String>>(2)?,
+            row.get::<_, Option<String>>(3)?,
+        ))
     })
     .map_err(|err| match err {
         rusqlite::Error::QueryReturnedNoRows => {
@@ -100,23 +190,133 @@ pub fn get_transcript(conn: &Connection, meeting_id: &str) -> CmdResult<Transcri
         }
         other => AppErrorDto::from(other),
     })
+    .and_then(|(meeting_id, text, segments_json, names_json)| {
+        Ok(Transcript {
+            meeting_id,
+            text,
+            segments: decode_segments(segments_json)?,
+            speaker_names: decode_speaker_names(names_json)?,
+        })
+    })
 }
 
+/// Persist ASR output: parse speakers from raw JSON when present.
+pub fn upsert_transcript_from_asr(
+    conn: &Connection,
+    meeting_id: &str,
+    fallback_text: &str,
+    raw_json: Option<&str>,
+) -> CmdResult<()> {
+    let parsed = match raw_json {
+        Some(raw) => parse_asr_transcript(raw, fallback_text),
+        None => crate::providers::doubao::ParsedAsrTranscript {
+            text: fallback_text.to_string(),
+            segments: vec![],
+            speaker_names: BTreeMap::new(),
+        },
+    };
+    upsert_transcript_parts(
+        conn,
+        meeting_id,
+        &parsed.text,
+        raw_json,
+        &parsed.segments,
+        &parsed.speaker_names,
+    )
+}
+
+/// Plain upsert used by tests that already have final text (no ASR parse).
+#[allow(dead_code)]
 pub fn upsert_transcript(
     conn: &Connection,
     meeting_id: &str,
     text: &str,
     raw_json: Option<&str>,
 ) -> CmdResult<()> {
+    upsert_transcript_parts(conn, meeting_id, text, raw_json, &[], &BTreeMap::new())
+}
+
+fn upsert_transcript_parts(
+    conn: &Connection,
+    meeting_id: &str,
+    text: &str,
+    raw_json: Option<&str>,
+    segments: &[TranscriptSegment],
+    speaker_names: &BTreeMap<String, String>,
+) -> CmdResult<()> {
+    let segments_json = serde_json::to_string(segments).map_err(AppErrorDto::from)?;
+    let names_json = serde_json::to_string(speaker_names).map_err(AppErrorDto::from)?;
     conn.execute(
-        "INSERT INTO transcripts (meeting_id, text, raw_json) VALUES (?1, ?2, ?3)
+        "INSERT INTO transcripts
+         (meeting_id, text, raw_json, segments_json, speaker_names_json)
+         VALUES (?1, ?2, ?3, ?4, ?5)
          ON CONFLICT(meeting_id) DO UPDATE SET
            text = excluded.text,
-           raw_json = excluded.raw_json",
-        rusqlite::params![meeting_id, text, raw_json],
+           raw_json = excluded.raw_json,
+           segments_json = excluded.segments_json,
+           speaker_names_json = excluded.speaker_names_json",
+        rusqlite::params![meeting_id, text, raw_json, segments_json, names_json],
     )
     .map_err(AppErrorDto::from)?;
     Ok(())
+}
+
+fn delete_summary_for_meeting(conn: &Connection, meeting_id: &str) -> CmdResult<()> {
+    conn.execute(
+        "DELETE FROM summaries WHERE meeting_id = ?1",
+        rusqlite::params![meeting_id],
+    )
+    .map_err(AppErrorDto::from)?;
+    Ok(())
+}
+
+/// Apply speaker display names, re-render transcript text, invalidate summary.
+pub fn update_speakers(
+    conn: &Connection,
+    meeting_id: &str,
+    speaker_names: BTreeMap<String, String>,
+) -> CmdResult<Transcript> {
+    let existing = get_transcript(conn, meeting_id)?;
+    if existing.segments.is_empty() {
+        return Err(AppErrorDto::transcript_no_speakers());
+    }
+
+    let mut names = existing.speaker_names;
+    for (id, name) in speaker_names {
+        let trimmed = name.trim().to_string();
+        if trimmed.is_empty() {
+            return Err(AppErrorDto::invalid_argument(
+                "Speaker display name cannot be empty",
+            ));
+        }
+        if !existing.segments.iter().any(|s| s.speaker_id == id) {
+            return Err(AppErrorDto::invalid_argument(format!(
+                "Unknown speaker id: {id}"
+            )));
+        }
+        names.insert(id, trimmed);
+    }
+
+    let text = render_transcript_text(&existing.segments, &names);
+    // Preserve raw_json: read and write back via UPDATE of known columns only.
+    let raw_json: Option<String> = conn
+        .query_row(
+            "SELECT raw_json FROM transcripts WHERE meeting_id = ?1",
+            rusqlite::params![meeting_id],
+            |row| row.get(0),
+        )
+        .map_err(AppErrorDto::from)?;
+
+    upsert_transcript_parts(
+        conn,
+        meeting_id,
+        &text,
+        raw_json.as_deref(),
+        &existing.segments,
+        &names,
+    )?;
+    delete_summary_for_meeting(conn, meeting_id)?;
+    get_transcript(conn, meeting_id)
 }
 
 #[cfg(test)]
@@ -137,6 +337,47 @@ mod tests {
         let meeting = create_from_file(&conn, path.to_str().unwrap()).expect("create");
         let loaded = get_meeting(&conn, &meeting.id).expect("get");
         assert_eq!(loaded.id, meeting.id);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn list_rename_delete_meeting() {
+        let conn = open_memory().expect("db");
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("meetly-list-{}.wav", Uuid::new_v4()));
+        {
+            let mut f = fs::File::create(&path).expect("create");
+            f.write_all(b"RIFF").expect("write");
+        }
+        let meeting = create_from_file(&conn, path.to_str().unwrap()).expect("create");
+        upsert_transcript_from_asr(
+            &conn,
+            &meeting.id,
+            "fallback",
+            Some(
+                r#"{"result":{"text":"ab","utterances":[
+                  {"text":"a","additions":{"speaker":"1"}},
+                  {"text":"b","additions":{"speaker":"2"}}
+                ]}}"#,
+            ),
+        )
+        .unwrap();
+
+        let listed = list_meetings(&conn).unwrap();
+        assert_eq!(listed.len(), 1);
+
+        let renamed = rename_meeting(&conn, &meeting.id, "  周会  ").unwrap();
+        assert_eq!(renamed.title.as_deref(), Some("周会"));
+
+        let mut names = BTreeMap::new();
+        names.insert("1".into(), "张三".into());
+        let updated = update_speakers(&conn, &meeting.id, names).unwrap();
+        assert!(updated.text.contains("【张三】"));
+        assert!(updated.text.contains("【发言人2】"));
+
+        delete_meeting(&conn, &meeting.id).unwrap();
+        assert!(list_meetings(&conn).unwrap().is_empty());
+        assert!(path.exists());
         let _ = fs::remove_file(&path);
     }
 

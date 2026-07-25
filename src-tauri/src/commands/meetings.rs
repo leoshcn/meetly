@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use tauri::State;
 
 use crate::error::CmdResult;
@@ -19,6 +21,15 @@ pub fn meetings_create_from_file(
 }
 
 #[tauri::command(rename_all = "snake_case")]
+pub fn meetings_list(state: State<'_, AppState>) -> CmdResult<Vec<Meeting>> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    meeting_service::list_meetings(&conn)
+}
+
+#[tauri::command(rename_all = "snake_case")]
 pub fn meetings_get(
     state: State<'_, AppState>,
     meeting_id: String,
@@ -31,6 +42,28 @@ pub fn meetings_get(
 }
 
 #[tauri::command(rename_all = "snake_case")]
+pub fn meetings_rename(
+    state: State<'_, AppState>,
+    meeting_id: String,
+    title: String,
+) -> CmdResult<Meeting> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    meeting_service::rename_meeting(&conn, &meeting_id, &title)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn meetings_delete(state: State<'_, AppState>, meeting_id: String) -> CmdResult<()> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    meeting_service::delete_meeting(&conn, &meeting_id)
+}
+
+#[tauri::command(rename_all = "snake_case")]
 pub fn meetings_get_transcript(
     state: State<'_, AppState>,
     meeting_id: String,
@@ -40,4 +73,17 @@ pub fn meetings_get_transcript(
         .lock()
         .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
     meeting_service::get_transcript(&conn, &meeting_id)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn meetings_update_speakers(
+    state: State<'_, AppState>,
+    meeting_id: String,
+    speaker_names: BTreeMap<String, String>,
+) -> CmdResult<Transcript> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    meeting_service::update_speakers(&conn, &meeting_id, speaker_names)
 }

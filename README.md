@@ -40,6 +40,13 @@ This starts Vite on `http://localhost:1420` and opens the Meetly window.
 - Hotwords from settings are sent to ASR; `context_text` is used for summary and is **not** sent to Doubao ASR.
 - Configure Doubao (and TOS for large files) under Settings before importing audio.
 
+## Recording notes
+
+- Home empty stage: **开始录音** (selectable mic + system speaker loopback mix) or **导入音频并转写**.
+- Stop recording → mixed **M4A (AAC)** under `Documents/Meetly/Recordings` (or custom folder) → auto-create meeting → start transcription.
+- Capture mixes to PCM; if FFmpeg is already available, encode to **M4A (AAC)**. Otherwise save **WAV** immediately (Doubao accepts both) and prefetch FFmpeg in the background for later recordings — never block stop on a first-time ~80–100 MiB download.
+- System audio uses the default playback device via WASAPI loopback (Windows). Loopback or mic failure aborts start (no silent mic-only).
+
 ## Summary notes
 
 - After a successful transcript, click **生成摘要** on the home panel.

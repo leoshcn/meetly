@@ -1,0 +1,63 @@
+.wrap {
+  width: min(28rem, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  margin: 0.35rem 0 0.15rem;
+  animation: wave-in 420ms ease-out;
+}
+
+@keyframes wave-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scaleY(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+.canvas {
+  width: 100%;
+  height: 112px;
+  display: block;
+}
+
+.legend {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0.15rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: var(--ink-muted);
+}
+
+.legendMic::before,
+.legendSys::before {
+  content: "";
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  margin-right: 0.35rem;
+  vertical-align: -0.05rem;
+}
+
+.legendMic::before {
+  background: var(--accent);
+}
+
+.legendSys::before {
+  background: var(--ink);
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wrap {
+    margin-top: 0.2rem;
+    animation: none;
+  }
+}

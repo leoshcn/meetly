@@ -1,6 +1,15 @@
 use serde::{Deserialize, Serialize};
 
 pub const SUMMARY_LANGUAGE_ZH_CN: &str = "zh-CN";
+pub const SUMMARY_LANGUAGE_EN: &str = "en";
+pub const SUMMARY_LANGUAGE_ZH_EN: &str = "zh-en";
+
+pub fn is_supported_summary_language(language: &str) -> bool {
+    matches!(
+        language,
+        SUMMARY_LANGUAGE_ZH_CN | SUMMARY_LANGUAGE_EN | SUMMARY_LANGUAGE_ZH_EN
+    )
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Summary {

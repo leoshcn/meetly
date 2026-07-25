@@ -24,3 +24,17 @@ Access via `src-tauri/src/services/settings_service.rs` and `db/pool.rs`.
 ## Jobs
 
 `jobs.provider_task_id` stores the Doubao async submit `X-Api-Request-Id` after URL-path submit (nullable for flash jobs).
+
+## Transcripts
+
+Migrations:
+
+- `002_meetings_jobs.sql` — base `transcripts(meeting_id, text, raw_json)`
+- Idempotent speaker columns via `ensure_transcript_speaker_columns` in `db/pool.rs` (documented by `005_transcript_speakers.sql`)
+
+| Column | Contents |
+|--------|----------|
+| `text` | Rendered full transcript (includes speaker display names when diarized) |
+| `raw_json` | Raw ASR response |
+| `segments_json` | JSON array of `{ speaker_id, text }` (nullable / empty when no diarization) |
+| `speaker_names_json` | JSON object map `speaker_id` → display name |

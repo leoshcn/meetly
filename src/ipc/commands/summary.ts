@@ -1,9 +1,13 @@
 import { invokeCommand } from "../client";
-import type { Summary } from "../types";
+import type { Summary, SummaryLanguage } from "../types";
 
-export function summaryGenerate(meetingId: string): Promise<Summary> {
+export function summaryGenerate(
+  meetingId: string,
+  language: SummaryLanguage,
+): Promise<Summary> {
   return invokeCommand<Summary>("summary_generate", {
     meeting_id: meetingId,
+    language,
   });
 }
 

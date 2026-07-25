@@ -1,0 +1,186 @@
+.sidebar {
+  width: 15.5rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 70%, var(--paper));
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rail {
+  width: 2.75rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 70%, var(--paper));
+  padding: 0.75rem 0.3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.toolbar {
+  padding: 0 0.75rem 0.65rem;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.9rem 0.85rem 0.55rem;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.collapse,
+.iconRail {
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.4rem;
+  color: var(--ink-muted);
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.collapse:hover,
+.iconRail:hover {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+
+.iconRail {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.45rem 1rem;
+  overflow: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.item,
+.itemActive {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.2rem;
+  background: transparent;
+  position: relative;
+}
+
+.item:hover,
+.item:focus-within {
+  background: color-mix(in srgb, var(--panel) 80%, var(--accent-soft));
+}
+
+.itemActive {
+  background: var(--accent-soft);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--line));
+}
+
+.selectBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+  width: 100%;
+  border: none;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0.4rem 0.45rem;
+  color: inherit;
+  border-radius: var(--radius-sm);
+}
+
+.title {
+  font-size: 0.9rem;
+  font-weight: 560;
+  color: var(--ink);
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.time {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.rowActions {
+  display: none;
+  gap: 0.15rem;
+  padding: 0 0.25rem 0.3rem;
+  flex-wrap: wrap;
+}
+
+.item:hover .rowActions,
+.item:focus-within .rowActions,
+.itemActive .rowActions {
+  display: flex;
+}
+
+.rowActions :global(button) {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.4rem;
+}
+
+.editRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.35rem;
+}
+
+.editRow input {
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--panel);
+  color: var(--ink);
+}
+
+.editActions {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.editActions :global(button) {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+}
+
+.empty {
+  color: var(--ink-muted);
+  font-size: 0.85rem;
+  padding: 0.85rem 0.55rem;
+}
+
+.error {
+  margin: 0 0.75rem 0.35rem;
+  color: var(--danger);
+  font-size: 0.78rem;
+}

@@ -1,0 +1,1 @@
+export { SettingsRecordingPanel } from "./SettingsRecording";

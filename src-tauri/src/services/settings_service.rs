@@ -40,6 +40,10 @@ fn with_configured(mut settings: Settings) -> Settings {
     settings.dashscope_configured = credentials::is_dashscope_configured();
     settings.tos_configured =
         compute_tos_configured(&settings.tos_region, &settings.tos_bucket);
+    settings.recording_dir_resolved =
+        crate::services::recording_service::resolve_recording_dir(&settings.recording_dir)
+            .map(|p| p.to_string_lossy().to_string())
+            .unwrap_or_default();
     settings
 }
 
@@ -54,7 +58,7 @@ pub fn is_tos_configured(conn: &Connection) -> bool {
 pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
     let mut stmt = conn
         .prepare(
-            "SELECT hotwords, context_text, tos_region, tos_bucket, tos_endpoint
+            "SELECT hotwords, context_text, tos_region, tos_bucket, tos_endpoint, recording_dir
              FROM settings WHERE id = 1",
         )
         .map_err(AppErrorDto::from)?;
@@ -65,17 +69,26 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
         let tos_region: String = row.get(2)?;
         let tos_bucket: String = row.get(3)?;
         let tos_endpoint: String = row.get(4)?;
+        let recording_dir: String = row.get(5)?;
         Ok((
             hotwords_json,
             context_text,
             tos_region,
             tos_bucket,
             tos_endpoint,
+            recording_dir,
         ))
     });
 
     match row {
-        Ok((hotwords_json, context_text, tos_region, tos_bucket, tos_endpoint)) => {
+        Ok((
+            hotwords_json,
+            context_text,
+            tos_region,
+            tos_bucket,
+            tos_endpoint,
+            recording_dir,
+        )) => {
             let hotwords: Vec<String> =
                 serde_json::from_str(&hotwords_json).map_err(AppErrorDto::from)?;
             Ok(with_configured(Settings {
@@ -87,6 +100,8 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
                 tos_region,
                 tos_bucket,
                 tos_endpoint,
+                recording_dir,
+                recording_dir_resolved: String::new(),
             }))
         }
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(with_configured(Settings::default())),
@@ -154,20 +169,22 @@ fn apply_credential_update(update: &SettingsUpdate) -> CmdResult<()> {
 fn persist_settings_row(conn: &Connection, settings: &Settings) -> CmdResult<()> {
     let hotwords_json = serde_json::to_string(&settings.hotwords).map_err(AppErrorDto::from)?;
     conn.execute(
-        "INSERT INTO settings (id, hotwords, context_text, tos_region, tos_bucket, tos_endpoint)
-         VALUES (1, ?1, ?2, ?3, ?4, ?5)
+        "INSERT INTO settings (id, hotwords, context_text, tos_region, tos_bucket, tos_endpoint, recording_dir)
+         VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6)
          ON CONFLICT(id) DO UPDATE SET
            hotwords = excluded.hotwords,
            context_text = excluded.context_text,
            tos_region = excluded.tos_region,
            tos_bucket = excluded.tos_bucket,
-           tos_endpoint = excluded.tos_endpoint",
+           tos_endpoint = excluded.tos_endpoint,
+           recording_dir = excluded.recording_dir",
         rusqlite::params![
             hotwords_json,
             settings.context_text,
             settings.tos_region,
             settings.tos_bucket,
-            settings.tos_endpoint
+            settings.tos_endpoint,
+            settings.recording_dir
         ],
     )
     .map_err(AppErrorDto::from)?;
@@ -180,6 +197,13 @@ pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<S
     if let Some(ref hotwords) = update.hotwords {
         validate_hotwords(hotwords)?;
     }
+    let recording_dir_validated = if let Some(ref raw) = update.recording_dir {
+        Some(crate::services::recording_service::validate_recording_dir_override(
+            raw,
+        )?)
+    } else {
+        None
+    };
     apply_credential_update(&update)?;
 
     let mut current = get_settings(conn)?;
@@ -204,6 +228,9 @@ pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<S
     }
     if let Some(tos_endpoint) = update.tos_endpoint {
         current.tos_endpoint = tos_endpoint.trim().to_string();
+    }
+    if let Some(recording_dir) = recording_dir_validated {
+        current.recording_dir = recording_dir;
     }
 
     persist_settings_row(conn, &current)?;
@@ -248,6 +275,15 @@ mod tests {
         assert!(!settings.tos_configured);
         assert_eq!(settings.tos_region, "");
         assert_eq!(settings.tos_bucket, "");
+        assert_eq!(settings.recording_dir, "");
+        assert!(
+            settings
+                .recording_dir_resolved
+                .replace('\\', "/")
+                .ends_with("Meetly/Recordings"),
+            "resolved={}",
+            settings.recording_dir_resolved
+        );
     }
 
     #[test]
@@ -429,5 +465,61 @@ mod tests {
         assert!(!cleared.tos_configured);
         assert_eq!(cleared.tos_region, "");
         assert_eq!(cleared.tos_bucket, "");
+    }
+
+    #[test]
+    fn recording_dir_persists_and_resolves() {
+        reset_for_test();
+        let conn = crate::db::pool::open_memory().expect("memory db");
+        let base = std::env::temp_dir().join(format!(
+            "meetly-settings-rec-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&base);
+
+        let updated = update_settings(
+            &conn,
+            SettingsUpdate {
+                recording_dir: Some(base.to_string_lossy().to_string()),
+                ..Default::default()
+            },
+        )
+        .expect("update");
+
+        assert_eq!(updated.recording_dir, base.to_string_lossy());
+        assert_eq!(updated.recording_dir_resolved, base.to_string_lossy());
+
+        let reset = update_settings(
+            &conn,
+            SettingsUpdate {
+                recording_dir: Some(String::new()),
+                ..Default::default()
+            },
+        )
+        .expect("reset");
+        assert_eq!(reset.recording_dir, "");
+        assert!(
+            reset
+                .recording_dir_resolved
+                .replace('\\', "/")
+                .ends_with("Meetly/Recordings")
+        );
+
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn recording_dir_relative_rejects() {
+        reset_for_test();
+        let conn = crate::db::pool::open_memory().expect("memory db");
+        let err = update_settings(
+            &conn,
+            SettingsUpdate {
+                recording_dir: Some("relative/recs".into()),
+                ..Default::default()
+            },
+        )
+        .expect_err("relative");
+        assert_eq!(err.code, "SETTINGS_INVALID");
     }
 }

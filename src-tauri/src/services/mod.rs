@@ -1,5 +1,7 @@
 pub mod credentials;
+pub mod ffmpeg_service;
 pub mod meeting_service;
+pub mod recording_service;
 pub mod settings_service;
 pub mod summary_service;
 pub mod transcription_service;

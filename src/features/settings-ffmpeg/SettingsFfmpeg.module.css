@@ -1,0 +1,110 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.1rem 1.15rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--panel);
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.hint {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.88rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.statusOk {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.statusWarn {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.statusErr {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.pathLine {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-muted);
+}
+
+.path {
+  color: var(--ink);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.78rem;
+  word-break: break-all;
+}
+
+.message {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--ink-muted);
+}
+
+.progressBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.progressTrack {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent, #1f5c57);
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.progressMeta {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.actions :global(button) {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.86rem;
+}

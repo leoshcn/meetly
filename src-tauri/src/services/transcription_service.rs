@@ -301,7 +301,12 @@ fn execute_transcription_job_with_poll(
             run_flash_path(&credentials, &ctx, flash)?
         };
 
-        meeting_service::upsert_transcript(conn, &ctx.meeting_id, &text, Some(&raw_json))?;
+        meeting_service::upsert_transcript_from_asr(
+            conn,
+            &ctx.meeting_id,
+            &text,
+            Some(&raw_json),
+        )?;
         mark_job_succeeded(conn, job_id)?;
         Ok(())
     })();
@@ -416,7 +421,7 @@ pub fn spawn_transcription_job(app: tauri::AppHandle, job_id: String) {
         };
         match recognize_result {
             Ok((text, raw_json, cleanup)) => {
-                if let Err(err) = meeting_service::upsert_transcript(
+                if let Err(err) = meeting_service::upsert_transcript_from_asr(
                     &conn,
                     &ctx.meeting_id,
                     &text,

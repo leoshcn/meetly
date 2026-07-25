@@ -27,3 +27,9 @@ ve-tos-rust-sdk = { version = "2.9.19", default-features = false, features = ["u
 base64 = "0.22"
 uuid = { version = "1", features = ["v4"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+cpal = "0.15"
+hound = "3.5"
+dirs = "5"
+# CLI wrapper only — we download the Windows essentials zip ourselves (avoids xz2).
+ffmpeg-sidecar = { version = "2", default-features = false }
+zip = { version = "2", default-features = false, features = ["deflate"] }

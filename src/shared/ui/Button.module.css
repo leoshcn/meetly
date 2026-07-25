@@ -1,0 +1,64 @@
+.button {
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  padding: 0.45rem 0.9rem;
+  border: 1px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease,
+    opacity 120ms ease;
+}
+
+.button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 88%, var(--accent));
+  border-color: color-mix(in srgb, var(--ink) 88%, var(--accent));
+}
+
+.secondary {
+  background: var(--panel);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.secondary:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--line) 60%, var(--ink));
+  background: color-mix(in srgb, var(--panel) 92%, var(--accent-soft));
+}
+
+.ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-muted);
+  padding: 0.3rem 0.5rem;
+}
+
+.ghost:hover:not(:disabled) {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+
+.danger {
+  background: transparent;
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
+  color: var(--danger);
+}
+
+.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 8%, var(--panel));
+}
+
+.block {
+  width: 100%;
+}

@@ -22,10 +22,12 @@ src-tauri/src/
 │   ├── settings.rs
 │   ├── meetings.rs
 │   ├── jobs.rs
-│   └── summary.rs
+│   ├── summary.rs
+│   └── recording.rs
 ├── services/
 │   ├── settings_service.rs
 │   ├── meeting_service.rs
+│   ├── recording_service.rs
 │   ├── transcription_service.rs
 │   ├── summary_service.rs
 │   └── credentials.rs

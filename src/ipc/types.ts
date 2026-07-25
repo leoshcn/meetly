@@ -7,6 +7,10 @@ export type Settings = {
   tos_region: string;
   tos_bucket: string;
   tos_endpoint: string;
+  /** User override; empty means default Documents/Meetly/Recordings. */
+  recording_dir: string;
+  /** Effective path after resolving the empty-default rule. */
+  recording_dir_resolved: string;
 };
 
 export type SettingsUpdate = {
@@ -25,6 +29,8 @@ export type SettingsUpdate = {
   tos_region?: string;
   tos_bucket?: string;
   tos_endpoint?: string;
+  /** Absolute path or empty string to reset to default. */
+  recording_dir?: string;
 };
 
 export type HealthResponse = {
@@ -39,9 +45,16 @@ export type Meeting = {
   created_at: string;
 };
 
+export type TranscriptSegment = {
+  speaker_id: string;
+  text: string;
+};
+
 export type Transcript = {
   meeting_id: string;
   text: string;
+  segments: TranscriptSegment[];
+  speaker_names: Record<string, string>;
 };
 
 export type JobStatus = "running" | "succeeded" | "failed" | string;
@@ -57,11 +70,65 @@ export type Job = {
   updated_at: string;
 };
 
+export type SummaryLanguage = "zh-CN" | "en" | "zh-en";
+
 export type Summary = {
   meeting_id: string;
   key_points: string[];
   action_items: string[];
   decisions: string[];
-  language: "zh-CN";
+  language: SummaryLanguage | string;
   created_at: string;
+};
+
+export type InputDevice = {
+  id: string;
+  name: string;
+  is_default: boolean;
+};
+
+export type DevicesResponse = {
+  devices: InputDevice[];
+  default_id: string | null;
+};
+
+export type RecordStartResponse = {
+  path: string;
+  device_name: string;
+  output_device_name: string;
+};
+
+export type RecordStopResponse = {
+  path: string;
+  duration_ms: number;
+};
+
+export type RecordStatusResponse = {
+  state: "idle" | "recording" | string;
+  path: string | null;
+  started_at: string | null;
+  device_name: string | null;
+  output_device_name: string | null;
+  /** Smoothed microphone amplitude in [0, 1]. */
+  mic_level: number;
+  /** Smoothed system-loopback amplitude in [0, 1]. */
+  system_level: number;
+};
+
+export type FfmpegStatus = {
+  installed: boolean;
+  busy: boolean;
+  phase: string;
+  downloaded_bytes: number;
+  total_bytes: number;
+  path: string | null;
+  message: string | null;
+};
+
+export type FfmpegProgressEvent = {
+  phase: string;
+  downloaded_bytes: number;
+  total_bytes: number;
+  installed: boolean;
+  message: string | null;
 };

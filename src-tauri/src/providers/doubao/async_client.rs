@@ -68,6 +68,9 @@ struct AsyncResult {
 pub fn build_async_submit_body(input: &AsyncSubmitInput) -> Value {
     let mut request = json!({
         "model_name": "bigmodel",
+        "enable_speaker_info": true,
+        "show_utterances": true,
+        "ssd_version": "200",
     });
 
     if let Some(context) = build_corpus_context(&input.hotwords) {
@@ -271,6 +274,8 @@ mod tests {
         let ctx = body["request"]["corpus"]["context"].as_str().unwrap();
         assert!(ctx.contains("Meetly"));
         assert!(!body.to_string().contains("context_text"));
+        assert_eq!(body["request"]["enable_speaker_info"], true);
+        assert_eq!(body["request"]["show_utterances"], true);
     }
 
     struct StubAsync {

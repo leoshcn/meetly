@@ -1,0 +1,7 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `py -3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "New record_* commands and Settings DTO must match IPC envelope"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "recording command/service layout"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "New RECORD_* / IO error codes"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "features/meeting-recording and settings-recording folders"}
+{"file": ".trellis/tasks/07-25-meeting-recording/research/recording-stack.md", "reason": "cpal+hound stack decision"}
+{"file": ".trellis/tasks/07-25-meeting-recording/design.md", "reason": "Architecture and IPC contracts"}
