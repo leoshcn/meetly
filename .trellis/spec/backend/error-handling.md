@@ -28,7 +28,7 @@ export type AppError = { code: string; message: string; details?: unknown };
 export function normalizeError(err: unknown): AppError;
 ```
 
-Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_configured`, `asr_payload_too_large`, `asr_provider_error`, `io_error`.
+Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_configured`, `asr_payload_too_large`, `asr_provider_error`, `io_error`, `summary_not_ready`, `summary_not_configured`, `summary_provider_error`.
 
 ---
 
@@ -39,6 +39,7 @@ Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_confi
 3. `From<rusqlite::Error>` / `From<serde_json::Error>` → `DB_ERROR` with **fixed** messages (do not forward Display).
 4. Frontend normalizes unknown rejects to `{ code: "INTERNAL", message: "Unexpected error" }`.
 5. Transcription jobs persist terminal failures as `status=failed` with `error_code` / `error_message` for UI polling.
+6. Summary generation failures return typed codes; do not persist partial summary on parse/API failure.
 
 ---
 
@@ -52,6 +53,9 @@ Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_confi
 | File too large (> 20 MiB) | `ASR_PAYLOAD_TOO_LARGE` | Inline / job error |
 | File read failure | `IO_ERROR` | Inline / job error |
 | Doubao API failure | `ASR_PROVIDER_ERROR` | Job error |
+| Transcript not ready for summary | `SUMMARY_NOT_READY` | Inline / prompt to finish ASR |
+| Missing DashScope key | `SUMMARY_NOT_CONFIGURED` | Prompt to settings |
+| Qwen API / invalid JSON | `SUMMARY_PROVIDER_ERROR` | Inline |
 | Unknown id | `NOT_FOUND` | Inline |
 | Unexpected | `INTERNAL` | Generic toast |
 
@@ -61,7 +65,7 @@ Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_confi
 
 | Case | Behavior |
 |------|----------|
-| Good | `SETTINGS_INVALID` / `ASR_*` codes preserved through `normalizeError` |
+| Good | `SETTINGS_INVALID` / `ASR_*` / `SUMMARY_*` codes preserved through `normalizeError` |
 | Base | `app_health` → `Ok` |
 | Bad | String-only rejects without `code` — client maps to `INTERNAL` |
 
@@ -72,6 +76,7 @@ Helpers: `settings_invalid`, `db_error`, `internal`, `not_found`, `asr_not_confi
 - `error.rs`: rusqlite mapping has no path separators in message.
 - `client.test.ts`: preserves `{ code, message }`; string → `INTERNAL`.
 - Job / provider tests assert stable ASR codes without leaking payloads.
+- Summary tests assert `SUMMARY_*` codes for not ready / not configured / parse failure.
 
 ---
 

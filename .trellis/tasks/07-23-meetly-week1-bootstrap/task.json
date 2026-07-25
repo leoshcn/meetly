@@ -20,7 +20,8 @@
   "subtasks": [],
   "children": [
     "07-23-scaffold-tauri-shell",
-    "07-23-doubao-async-transcription"
+    "07-23-doubao-async-transcription",
+    "07-25-meeting-summary"
   ],
   "parent": null,
   "relatedFiles": [],

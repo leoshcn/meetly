@@ -21,7 +21,8 @@ src/
 ├── features/
 │   ├── settings-hotwords/
 │   ├── settings-credentials/
-│   └── transcription-import/
+│   ├── transcription-import/
+│   └── meeting-summary/
 ├── shared/
 │   ├── ui/
 │   ├── hooks/
@@ -34,7 +35,7 @@ src/
 └── main.tsx
 ```
 
-Evidence: `src/app/AppShell.tsx`, `src/pages/settings/SettingsPage.tsx`, `src/features/settings-hotwords/SettingsHotwords.tsx`, `src/ipc/client.ts`.
+Evidence: `src/app/AppShell.tsx`, `src/pages/settings/SettingsPage.tsx`, `src/features/settings-hotwords/SettingsHotwords.tsx`, `src/features/meeting-summary/`, `src/ipc/client.ts`.
 
 ---
 
