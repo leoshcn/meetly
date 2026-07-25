@@ -6,7 +6,7 @@
 
 ## Overview
 
-Backend logic lives in `src-tauri/src/`. Commands are thin; services own business rules; `db` owns SQLite; `providers` own external HTTP.
+Backend logic lives in `src-tauri/src/`. Commands are thin; services own business rules; `db` owns SQLite; `providers` own external HTTP / SDK clients.
 
 ---
 
@@ -21,26 +21,35 @@ src-tauri/src/
 │   ├── health.rs
 │   ├── settings.rs
 │   ├── meetings.rs
-│   └── jobs.rs
+│   ├── jobs.rs
+│   └── summary.rs
 ├── services/
 │   ├── settings_service.rs
 │   ├── meeting_service.rs
 │   ├── transcription_service.rs
+│   ├── summary_service.rs
 │   └── credentials.rs
 ├── providers/
-│   └── doubao/
-│       ├── mod.rs
-│       ├── flash_client.rs
-│       └── hotwords.rs
+│   ├── doubao/
+│   │   ├── mod.rs
+│   │   ├── flash_client.rs
+│   │   ├── async_client.rs
+│   │   └── hotwords.rs
+│   ├── tos/
+│   │   └── mod.rs
+│   └── qwen/
 ├── db/
 │   ├── pool.rs
 │   └── migrations/
 │       ├── 001_settings.sql
-│       └── 002_meetings_jobs.sql
+│       ├── 002_meetings_jobs.sql
+│       ├── 003_summaries.sql
+│       └── 004_tos_settings.sql
 └── models/
     ├── settings.rs
     ├── meeting.rs
-    └── job.rs
+    ├── job.rs
+    └── summary.rs
 ```
 
 ---
@@ -48,8 +57,8 @@ src-tauri/src/
 ## Module Organization
 
 - **commands/** — IPC edge only.
-- **services/** — validation + persistence + job orchestration.
-- **providers/** — Doubao (and future) HTTP clients; no SQLite.
+- **services/** — validation + persistence + job orchestration (incl. dual-path flash vs TOS+async).
+- **providers/** — Doubao flash/async, TOS object storage, Qwen; no SQLite.
 - **db/** — migrations + connection.
 - **models/** — serde DTOs shared across IPC.
 
@@ -57,6 +66,6 @@ src-tauri/src/
 
 ## Anti-Patterns
 
-- Doubao HTTP calls inside command handlers (keep under `providers/`).
+- Doubao / TOS HTTP or SDK calls inside command handlers (keep under `providers/`).
 - Returning unstructured `String` errors from commands.
-- Storing Doubao secrets in SQLite.
+- Storing Doubao, DashScope, or TOS secrets in SQLite.

@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "Commands, settings secrets, size caps to extend"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Error code helpers and matrix"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Where providers/services live"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "SQLite migration for TOS non-secrets"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Settings/import feature layout"}
+{"file": ".trellis/tasks/07-25-doubao-url-async-transcription/research/doubao-async-tos.md", "reason": "Async + TOS contract"}
+{"file": ".trellis/tasks/07-23-doubao-async-transcription/research/doubao-flash-base64.md", "reason": "Existing flash path to preserve"}

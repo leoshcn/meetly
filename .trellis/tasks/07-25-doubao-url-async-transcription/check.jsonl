@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "Validate dual-path IPC and caps"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Validate new error codes"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Test expectations"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend test bar"}
+{"file": ".trellis/tasks/07-25-doubao-url-async-transcription/research/doubao-async-tos.md", "reason": "Provider contract compliance"}
+{"file": ".trellis/tasks/07-25-doubao-url-async-transcription/prd.md", "reason": "Acceptance criteria"}

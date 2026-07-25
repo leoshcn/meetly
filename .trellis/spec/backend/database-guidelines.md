@@ -2,10 +2,25 @@
 
 ## Settings table
 
-Migration: `src-tauri/src/db/migrations/001_settings.sql`
+Migrations:
 
-- Singleton row `id = 1`
-- `hotwords` TEXT NOT NULL DEFAULT `'[]'` (JSON string array)
-- `context_text` TEXT NOT NULL DEFAULT `''`
+- `src-tauri/src/db/migrations/001_settings.sql` — base singleton
+- Idempotent TOS columns via `ensure_tos_settings_columns` in `db/pool.rs` (documented by `004_tos_settings.sql`)
+
+Singleton row `id = 1`:
+
+| Column | Contents |
+|--------|----------|
+| `hotwords` | TEXT NOT NULL DEFAULT `'[]'` (JSON string array) |
+| `context_text` | TEXT NOT NULL DEFAULT `''` |
+| `tos_region` | TEXT NOT NULL DEFAULT `''` (non-secret) |
+| `tos_bucket` | TEXT NOT NULL DEFAULT `''` (non-secret) |
+| `tos_endpoint` | TEXT NOT NULL DEFAULT `''` (optional; empty → SDK default) |
+
+**Never** store Doubao, DashScope, or TOS AK/SK in SQLite — those live in the OS keyring (`meetly` service).
 
 Access via `src-tauri/src/services/settings_service.rs` and `db/pool.rs`.
+
+## Jobs
+
+`jobs.provider_task_id` stores the Doubao async submit `X-Api-Request-Id` after URL-path submit (nullable for flash jobs).
