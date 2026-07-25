@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 1
+- **Total Sessions**: 2
 - **Last Active**: 2026-07-25
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~45 | Active |
+| `journal-1.md` | ~79 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 2 | 2026-07-25 | Doubao URL/async large audio transcription | `af1d8db`, `764f151` | `main` |
 | 1 | 2026-07-25 | Meetly week-1: Trellis setup, ASR, summary | `fb52127`, `62c8eb1`, `04501fb`, `c7af70d`, `6cbd243`, `94d04c8` | `main` |
 <!-- @@@/auto:session-history -->
 

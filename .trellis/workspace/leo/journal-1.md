@@ -43,3 +43,37 @@ From-scratch Meetly desktop app: Trellis specs, Tauri scaffold, Doubao flash tra
 ### Next Steps
 
 - None - task complete
+
+
+## Session 2: Doubao URL/async large audio transcription
+
+**Date**: 2026-07-25
+**Task**: Doubao URL/async large audio transcription
+**Branch**: `main`
+
+### Summary
+
+Planned and shipped dual-path ASR: keep flash for files up to 20 MiB; larger files use TOS upload plus Doubao standard async submit/query up to 512 MiB with a 45-minute poll timeout. Added TOS settings (keyring secrets), providers, tests, README and backend spec sync.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `af1d8db` | (see git log) |
+| `764f151` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
