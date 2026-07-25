@@ -25,3 +25,12 @@ pub fn settings_update(
         .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
     services::update_settings(&conn, update)
 }
+
+#[tauri::command]
+pub fn settings_clear_doubao_credentials(state: State<'_, AppState>) -> CmdResult<Settings> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    services::clear_doubao_credentials(&conn)
+}

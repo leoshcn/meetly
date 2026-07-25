@@ -8,3 +8,7 @@ export function settingsGet(): Promise<Settings> {
 export function settingsUpdate(update: SettingsUpdate): Promise<Settings> {
   return invokeCommand<Settings>("settings_update", { update });
 }
+
+export function settingsClearDoubaoCredentials(): Promise<Settings> {
+  return invokeCommand<Settings>("settings_clear_doubao_credentials");
+}

@@ -44,6 +44,32 @@ impl AppErrorDto {
     pub fn internal(message: impl Into<String>) -> Self {
         Self::new("INTERNAL", message)
     }
+
+    pub fn not_found(message: impl Into<String>) -> Self {
+        Self::new("NOT_FOUND", message)
+    }
+
+    pub fn asr_not_configured() -> Self {
+        Self::new(
+            "ASR_NOT_CONFIGURED",
+            "Doubao credentials are not configured",
+        )
+    }
+
+    pub fn asr_payload_too_large(max_bytes: u64) -> Self {
+        Self::new(
+            "ASR_PAYLOAD_TOO_LARGE",
+            format!("Audio file exceeds the {max_bytes} byte limit"),
+        )
+    }
+
+    pub fn asr_provider_error(message: impl Into<String>) -> Self {
+        Self::new("ASR_PROVIDER_ERROR", message)
+    }
+
+    pub fn io_error(message: impl Into<String>) -> Self {
+        Self::new("IO_ERROR", message)
+    }
 }
 
 impl From<rusqlite::Error> for AppErrorDto {

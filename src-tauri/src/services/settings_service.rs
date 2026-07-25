@@ -2,6 +2,7 @@ use rusqlite::Connection;
 
 use crate::error::{AppErrorDto, CmdResult};
 use crate::models::{Settings, SettingsUpdate};
+use crate::services::credentials;
 
 /// Max length of a single hotword (characters).
 pub const MAX_HOTWORD_LEN: usize = 100;
@@ -28,6 +29,11 @@ pub fn validate_hotwords(hotwords: &[String]) -> CmdResult<()> {
     Ok(())
 }
 
+fn with_configured(mut settings: Settings) -> Settings {
+    settings.doubao_configured = credentials::is_configured();
+    settings
+}
+
 pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
     let mut stmt = conn
         .prepare("SELECT hotwords, context_text FROM settings WHERE id = 1")
@@ -43,21 +49,55 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
         Ok((hotwords_json, context_text)) => {
             let hotwords: Vec<String> =
                 serde_json::from_str(&hotwords_json).map_err(AppErrorDto::from)?;
-            Ok(Settings {
+            Ok(with_configured(Settings {
                 hotwords,
                 context_text,
-            })
+                doubao_configured: false,
+            }))
         }
-        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(Settings::default()),
+        Err(rusqlite::Error::QueryReturnedNoRows) => Ok(with_configured(Settings::default())),
         Err(err) => Err(AppErrorDto::from(err)),
     }
 }
 
+fn apply_credential_update(update: &SettingsUpdate) -> CmdResult<()> {
+    let has_app = update
+        .doubao_app_id
+        .as_ref()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false);
+    let has_token = update
+        .doubao_access_token
+        .as_ref()
+        .map(|s| !s.trim().is_empty())
+        .unwrap_or(false);
+
+    if !has_app && !has_token {
+        return Ok(());
+    }
+    if !(has_app && has_token) {
+        return Err(AppErrorDto::settings_invalid(
+            "Doubao app id and access token must both be provided together",
+        ));
+    }
+
+    credentials::set_credentials(
+        update.doubao_app_id.as_ref().unwrap(),
+        update.doubao_access_token.as_ref().unwrap(),
+    )
+}
+
 pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<Settings> {
+    // Validate SQLite fields before touching the keyring so a bad payload
+    // cannot partially apply credentials.
+    if let Some(ref hotwords) = update.hotwords {
+        validate_hotwords(hotwords)?;
+    }
+    apply_credential_update(&update)?;
+
     let mut current = get_settings(conn)?;
 
     if let Some(hotwords) = update.hotwords {
-        validate_hotwords(&hotwords)?;
         // Persist trimmed forms so empty-looking values never sneak in.
         current.hotwords = hotwords
             .into_iter()
@@ -80,49 +120,67 @@ pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<S
     )
     .map_err(AppErrorDto::from)?;
 
-    Ok(current)
+    Ok(with_configured(Settings {
+        hotwords: current.hotwords,
+        context_text: current.context_text,
+        doubao_configured: false,
+    }))
+}
+
+pub fn clear_doubao_credentials(conn: &Connection) -> CmdResult<Settings> {
+    credentials::clear_credentials()?;
+    get_settings(conn)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::db::pool::open_memory;
+    use crate::services::credentials::reset_for_test;
 
     #[test]
     fn empty_db_returns_defaults() {
+        reset_for_test();
         let conn = open_memory().expect("memory db");
         let settings = get_settings(&conn).expect("get");
         assert_eq!(settings.hotwords, Vec::<String>::new());
         assert_eq!(settings.context_text, "");
+        assert!(!settings.doubao_configured);
     }
 
     #[test]
     fn update_persists_hotwords_and_context() {
+        reset_for_test();
         let conn = open_memory().expect("memory db");
         let updated = update_settings(
             &conn,
             SettingsUpdate {
                 hotwords: Some(vec!["Meetly".into(), "豆包".into()]),
                 context_text: Some("周会摘要上下文".into()),
+                ..Default::default()
             },
         )
         .expect("update");
 
         assert_eq!(updated.hotwords, vec!["Meetly", "豆包"]);
         assert_eq!(updated.context_text, "周会摘要上下文");
+        assert!(!updated.doubao_configured);
 
         let loaded = get_settings(&conn).expect("reload");
-        assert_eq!(loaded, updated);
+        assert_eq!(loaded.hotwords, updated.hotwords);
+        assert_eq!(loaded.context_text, updated.context_text);
     }
 
     #[test]
     fn empty_hotword_rejects_without_write() {
+        reset_for_test();
         let conn = open_memory().expect("memory db");
         update_settings(
             &conn,
             SettingsUpdate {
                 hotwords: Some(vec!["ok".into()]),
                 context_text: Some("keep".into()),
+                ..Default::default()
             },
         )
         .expect("seed");
@@ -132,6 +190,7 @@ mod tests {
             SettingsUpdate {
                 hotwords: Some(vec!["ok".into(), "".into()]),
                 context_text: Some("should-not-write".into()),
+                ..Default::default()
             },
         )
         .expect_err("empty hotword");
@@ -158,12 +217,14 @@ mod tests {
 
     #[test]
     fn partial_update_context_only() {
+        reset_for_test();
         let conn = open_memory().expect("memory db");
         update_settings(
             &conn,
             SettingsUpdate {
                 hotwords: Some(vec!["Meetly".into()]),
                 context_text: None,
+                ..Default::default()
             },
         )
         .expect("hotwords");
@@ -173,11 +234,36 @@ mod tests {
             SettingsUpdate {
                 hotwords: None,
                 context_text: Some("only context".into()),
+                ..Default::default()
             },
         )
         .expect("context");
 
         assert_eq!(updated.hotwords, vec!["Meetly"]);
         assert_eq!(updated.context_text, "only context");
+    }
+
+    #[test]
+    fn credentials_set_flip_configured_without_leaking_secrets() {
+        reset_for_test();
+        let conn = open_memory().expect("memory db");
+        let updated = update_settings(
+            &conn,
+            SettingsUpdate {
+                doubao_app_id: Some("app-id".into()),
+                doubao_access_token: Some("secret-token".into()),
+                ..Default::default()
+            },
+        )
+        .expect("creds");
+
+        assert!(updated.doubao_configured);
+        let json = serde_json::to_string(&updated).expect("ser");
+        assert!(!json.contains("secret-token"));
+        assert!(!json.contains("app-id"));
+        assert!(json.contains("doubao_configured"));
+
+        let cleared = clear_doubao_credentials(&conn).expect("clear");
+        assert!(!cleared.doubao_configured);
     }
 }

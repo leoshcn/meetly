@@ -5,6 +5,7 @@ use rusqlite::Connection;
 use crate::error::{AppErrorDto, CmdResult};
 
 const MIGRATION_001: &str = include_str!("migrations/001_settings.sql");
+const MIGRATION_002: &str = include_str!("migrations/002_meetings_jobs.sql");
 
 pub fn open_connection(path: &Path) -> CmdResult<Connection> {
     let conn = Connection::open(path).map_err(AppErrorDto::from)?;
@@ -21,6 +22,8 @@ pub fn open_memory() -> CmdResult<Connection> {
 
 pub fn migrate(conn: &Connection) -> CmdResult<()> {
     conn.execute_batch(MIGRATION_001)
+        .map_err(AppErrorDto::from)?;
+    conn.execute_batch(MIGRATION_002)
         .map_err(AppErrorDto::from)?;
     Ok(())
 }

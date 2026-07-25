@@ -2,6 +2,7 @@ mod commands;
 mod db;
 mod error;
 mod models;
+mod providers;
 mod services;
 
 use std::sync::Mutex;
@@ -19,6 +20,7 @@ pub struct AppState {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let data_dir = app
                 .path()
@@ -38,6 +40,12 @@ pub fn run() {
             commands::health::app_health,
             commands::settings::settings_get,
             commands::settings::settings_update,
+            commands::settings::settings_clear_doubao_credentials,
+            commands::meetings::meetings_create_from_file,
+            commands::meetings::meetings_get,
+            commands::meetings::meetings_get_transcript,
+            commands::jobs::jobs_start_transcription,
+            commands::jobs::jobs_get,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

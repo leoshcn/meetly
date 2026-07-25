@@ -1,6 +1,6 @@
 # Meetly
 
-Desktop meeting assistant scaffold (Tauri 2 + React + TypeScript + Vite + SQLite).
+Desktop meeting assistant (Tauri 2 + React + TypeScript + Vite + SQLite).
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ Open a “x64 Native Tools” / Developer Command Prompt, or ensure `vcvars64.ba
 npm install
 ```
 
-No API keys are required for this scaffold. Future Doubao ASR credentials will use local env vars such as `MEETLY_DOUBAO_APP_ID` / `MEETLY_DOUBAO_ACCESS_TOKEN` — never commit real secrets.
+Doubao ASR credentials are entered in **Settings** and stored in the OS keyring (not SQLite, never returned by `settings_get`). Do not commit real secrets.
 
 ## Run (desktop)
 
@@ -25,6 +25,13 @@ npm run tauri dev
 ```
 
 This starts Vite on `http://localhost:1420` and opens the Meetly window.
+
+## Transcription notes
+
+- Provider: Doubao **flash** recognize (`audio.data` base64).
+- Single-file size cap: **20 MiB** (`ASR_PAYLOAD_TOO_LARGE` if larger).
+- Hotwords from settings are sent to ASR; `context_text` is reserved for summary and is **not** sent to Doubao ASR.
+- Configure App Id + Access Token under Settings before importing audio.
 
 ## Tests
 
@@ -35,7 +42,7 @@ npm test
 # Typecheck
 npm run typecheck
 
-# Rust (settings validation + SQLite persist)
+# Rust (settings, hotwords, jobs, credentials)
 cd src-tauri
 cargo test
 ```
@@ -43,6 +50,6 @@ cargo test
 ## Project layout
 
 - `src/` — React UI (`app/`, `pages/`, `features/`, `ipc/`, `shared/`, `styles/`)
-- `src-tauri/` — Tauri commands, services, SQLite (`db/`, `commands/`, `services/`, `models/`)
+- `src-tauri/` — Tauri commands, services, providers, SQLite (`db/`, `commands/`, `services/`, `providers/`, `models/`)
 
-Settings (`hotwords`, `context_text`) persist in the app data SQLite file (`meetly.db`). Hotwords are for transcription; context text is for summary — neither is sent to any provider in this scaffold.
+Settings (`hotwords`, `context_text`) persist in the app data SQLite file (`meetly.db`). Doubao secrets live only in the OS credential store; `settings_get` exposes `doubao_configured: boolean` only.

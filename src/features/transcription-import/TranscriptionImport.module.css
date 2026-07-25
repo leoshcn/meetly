@@ -1,0 +1,61 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 44rem;
+}
+
+.hint {
+  margin: 0;
+  color: #5c6570;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.actions button {
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid #2f3a45;
+  background: #2f3a45;
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+}
+
+.actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.meta {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #3d4650;
+}
+
+.status {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.transcript {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  padding: 0.85rem 1rem;
+  background: #f4f6f8;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
