@@ -1,6 +1,7 @@
 use std::fs::{self, File};
 use std::io::{copy, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::thread;
@@ -11,6 +12,7 @@ use tauri::{AppHandle, Emitter};
 use crate::error::{AppErrorDto, CmdResult};
 
 static DOWNLOAD_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
+static INSTALL_DIR: OnceLock<PathBuf> = OnceLock::new();
 
 fn progress_slot() -> &'static Mutex<FfmpegProgress> {
     static CELL: OnceLock<Mutex<FfmpegProgress>> = OnceLock::new();
@@ -47,15 +49,65 @@ pub struct FfmpegProgressEvent {
     pub message: Option<String>,
 }
 
-pub fn is_ready() -> bool {
-    ffmpeg_sidecar::command::ffmpeg_is_installed()
+/// Must be called once during app setup with a user-writable directory
+/// (e.g. `app_data_dir/ffmpeg`). MSI installs under Program Files cannot
+/// receive downloads next to the executable.
+pub fn init_install_dir(dir: PathBuf) {
+    let _ = INSTALL_DIR.set(dir);
 }
 
-fn sidecar_path_string() -> Option<String> {
-    ffmpeg_sidecar::paths::sidecar_path()
-        .ok()
-        .filter(|p| p.exists())
-        .map(|p| p.to_string_lossy().to_string())
+fn install_dir() -> CmdResult<PathBuf> {
+    INSTALL_DIR
+        .get()
+        .cloned()
+        .ok_or_else(|| AppErrorDto::internal("FFmpeg install directory was not initialized"))
+}
+
+fn managed_binary_path() -> Option<PathBuf> {
+    INSTALL_DIR.get().map(|dir| {
+        let mut path = dir.join("ffmpeg");
+        if cfg!(windows) {
+            path.set_extension("exe");
+        }
+        path
+    })
+}
+
+fn binary_runs(path: &Path) -> bool {
+    let mut cmd = Command::new(path);
+    cmd.arg("-version")
+        .stderr(Stdio::null())
+        .stdout(Stdio::null());
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+    cmd.status()
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
+/// Prefer the app-managed binary under app data; fall back to PATH / exe-adjacent.
+pub fn resolve_ffmpeg_path() -> Option<PathBuf> {
+    if let Some(path) = managed_binary_path().filter(|p| p.exists() && binary_runs(p)) {
+        return Some(path);
+    }
+    let fallback = ffmpeg_sidecar::paths::ffmpeg_path();
+    if binary_runs(&fallback) {
+        Some(fallback)
+    } else {
+        None
+    }
+}
+
+pub fn is_ready() -> bool {
+    resolve_ffmpeg_path().is_some()
+}
+
+fn path_string() -> Option<String> {
+    resolve_ffmpeg_path().map(|p| p.to_string_lossy().to_string())
 }
 
 fn read_progress() -> FfmpegProgress {
@@ -96,7 +148,7 @@ pub fn status() -> FfmpegStatus {
         phase,
         downloaded_bytes: progress.downloaded_bytes,
         total_bytes: progress.total_bytes,
-        path: sidecar_path_string(),
+        path: path_string(),
         message: progress.message.clone(),
     }
 }
@@ -208,11 +260,9 @@ fn download_and_install(on_progress: impl Fn(&str, u64, u64, &str)) -> CmdResult
 fn download_and_install_windows(on_progress: &ProgressCb<'_>) -> CmdResult<()> {
     const URL: &str = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
 
-    let dest_dir = ffmpeg_sidecar::paths::sidecar_dir().map_err(|e| {
-        AppErrorDto::io_error(format!("Could not resolve FFmpeg install directory: {e}"))
-    })?;
-    fs::create_dir_all(&dest_dir).map_err(|_| {
-        AppErrorDto::io_error("Could not create FFmpeg install directory")
+    let dest_dir = install_dir()?;
+    fs::create_dir_all(&dest_dir).map_err(|e| {
+        AppErrorDto::io_error(format!("Could not create FFmpeg install directory: {e}"))
     })?;
 
     let archive_path = dest_dir.join("ffmpeg-release-essentials.zip");
@@ -234,8 +284,8 @@ fn download_and_install_windows(on_progress: &ProgressCb<'_>) -> CmdResult<()> {
     }
 
     let total = response.content_length().unwrap_or(0);
-    let mut file = File::create(&archive_path).map_err(|_| {
-        AppErrorDto::io_error("Could not create FFmpeg archive file")
+    let mut file = File::create(&archive_path).map_err(|e| {
+        AppErrorDto::io_error(format!("Could not create FFmpeg archive file: {e}"))
     })?;
 
     let mut buf = [0u8; 64 * 1024];
@@ -305,8 +355,8 @@ fn extract_ffmpeg_exe(archive: &Path, dest_dir: &Path) -> CmdResult<()> {
         AppErrorDto::io_error("Could not read ffmpeg.exe from archive")
     })?;
     let out_path = dest_dir.join("ffmpeg.exe");
-    let mut out = File::create(&out_path).map_err(|_| {
-        AppErrorDto::io_error("Could not write ffmpeg.exe")
+    let mut out = File::create(&out_path).map_err(|e| {
+        AppErrorDto::io_error(format!("Could not write ffmpeg.exe: {e}"))
     })?;
     copy(&mut entry, &mut out).map_err(|_| {
         AppErrorDto::io_error("Failed while extracting ffmpeg.exe")
@@ -322,12 +372,32 @@ mod tests {
     fn status_reports_missing_or_ready() {
         let s = status();
         assert!(
-            matches!(s.phase.as_str(), "missing" | "ready" | "error" | "starting" | "downloading" | "unpacking"),
+            matches!(
+                s.phase.as_str(),
+                "missing" | "ready" | "error" | "starting" | "downloading" | "unpacking"
+            ),
             "unexpected phase {}",
             s.phase
         );
         if s.installed {
             assert!(is_ready());
         }
+    }
+
+    #[test]
+    fn init_install_dir_sets_managed_binary_path() {
+        let dir = std::env::temp_dir().join(format!(
+            "meetly-ffmpeg-init-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).unwrap();
+        init_install_dir(dir.clone());
+
+        let path = managed_binary_path().expect("install dir set");
+        assert_eq!(path.parent(), Some(dir.as_path()));
+        #[cfg(windows)]
+        assert_eq!(path.extension().and_then(|e| e.to_str()), Some("exe"));
+        let _ = fs::remove_dir_all(&dir);
     }
 }

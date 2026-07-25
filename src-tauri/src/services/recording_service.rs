@@ -518,7 +518,10 @@ fn try_encode_wav_to_m4a(wav: &Path, m4a: &Path) -> CmdResult<bool> {
     let wav_s = wav.to_string_lossy().to_string();
     let m4a_s = m4a.to_string_lossy().to_string();
 
-    let mut child = ffmpeg_sidecar::command::FfmpegCommand::new()
+    let ffmpeg_bin = crate::services::ffmpeg_service::resolve_ffmpeg_path().ok_or_else(|| {
+        AppErrorDto::io_error("FFmpeg is not available")
+    })?;
+    let mut child = ffmpeg_sidecar::command::FfmpegCommand::new_with_path(&ffmpeg_bin)
         .create_no_window()
         .overwrite()
         .input(&wav_s)
