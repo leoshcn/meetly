@@ -1,0 +1,3 @@
+# Keep directory; binaries are staged by scripts/prepare-ffmpeg.mjs
+*
+!.gitignore

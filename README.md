@@ -47,6 +47,46 @@ This starts Vite on `http://localhost:1420` and opens the Meetly window.
 - Capture mixes to PCM; if FFmpeg is already available, encode to **M4A (AAC)**. Otherwise save **WAV** immediately (Doubao accepts both) and prefetch FFmpeg in the background for later recordings — never block stop on a first-time ~80–100 MiB download.
 - System audio uses the default playback device via WASAPI loopback (Windows). Loopback or mic failure aborts start (no silent mic-only).
 
+## Windows installers (lean + offline)
+
+Meetly ships **two Windows NSIS installers** (same app id; installing one replaces the other):
+
+| Artifact | Contents | When to use |
+|----------|----------|-------------|
+| `Meetly_<ver>_x64-setup.exe` (**lean**, default) | App only | Normal installs; FFmpeg downloads on first need (~80–100 MiB from the pinned essentials build) |
+| `Meetly_<ver>_x64-offline-setup.exe` | App + bundled FFmpeg | Slow/offline networks; no first-run FFmpeg download |
+
+Build (Windows + MSVC env, same as `tauri build`):
+
+```bash
+# Cache FFmpeg essentials once (pinned URL in scripts/ffmpeg-pin.json)
+npm run ffmpeg:prepare
+
+# Lean only / offline only / both → outputs under dist-installers/
+npm run pack:lean
+npm run pack:offline
+npm run pack:all
+```
+
+- Cache directory: `third_party/ffmpeg-cache/` (gitignored). Local cache hits skip the download; CI uses the same path with `actions/cache` (see `.github/workflows/release.yml`).
+- Offline build stages `src-tauri/binaries/ffmpeg-<triple>.exe` (gitignored) and merges `src-tauri/tauri.offline.conf.json` (`bundle.externalBin`).
+- Bundled FFmpeg is the Gyan **essentials** build (GPLv3). See [GyanD/codexffmpeg](https://github.com/GyanD/codexffmpeg) / [gyan.dev/ffmpeg](https://www.gyan.dev/ffmpeg/builds/).
+
+### GitHub Actions release
+
+Push a version tag (or run **Actions → Release → Run workflow**):
+
+```bash
+# Ensure package.json / tauri.conf.json version match the tag you want on artifacts
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+- Runner: `windows-latest` → `npm run pack:all` → uploads both NSIS installers.
+- Tag pushes also create a GitHub Release with the two `.exe` files attached.
+- `workflow_dispatch` builds and uploads workflow artifacts only (no Release unless you push a tag).
+- Code signing is not configured yet.
+
 ## Summary notes
 
 - After a successful transcript, click **生成摘要** on the home panel.

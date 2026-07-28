@@ -116,7 +116,7 @@ export function SettingsFfmpegPanel() {
     <section className={styles.panel}>
       <h2>FFmpeg（M4A 编码）</h2>
       <p className={styles.hint}>
-        用于将录音压缩为更小的 M4A 文件。首次下载约 80–100 MB；未安装时录音仍可保存为
+        用于将录音压缩为更小的 M4A 文件。若安装包未内置，首次下载约 80–100 MB；未安装时录音仍可保存为
         WAV 并正常转写。
       </p>
 

@@ -1,0 +1,6 @@
+{
+  "version": "8.1",
+  "url": "https://github.com/GyanD/codexffmpeg/releases/download/8.1/ffmpeg-8.1-essentials_build.zip",
+  "archiveName": "ffmpeg-8.1-essentials_build.zip",
+  "notes": "Pinned Gyan essentials build (GitHub release asset). Bump version+url together. Future CI: cache key = version."
+}

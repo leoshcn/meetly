@@ -10,7 +10,11 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ffmpeg:prepare": "node scripts/prepare-ffmpeg.mjs",
+    "pack:lean": "node scripts/pack-installers.mjs lean",
+    "pack:offline": "node scripts/pack-installers.mjs offline",
+    "pack:all": "node scripts/pack-installers.mjs all"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",

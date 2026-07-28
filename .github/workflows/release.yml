@@ -1,0 +1,100 @@
+# Build Windows NSIS installers (lean + offline) and publish on version tags.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-nsis:
+    name: Windows NSIS (lean + offline)
+    runs-on: windows-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Rust (MSVC)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Read FFmpeg pin version
+        id: ffmpeg
+        shell: pwsh
+        run: |
+          $pin = Get-Content scripts/ffmpeg-pin.json -Raw | ConvertFrom-Json
+          "version=$($pin.version)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+      - name: Cache FFmpeg essentials
+        uses: actions/cache@v4
+        with:
+          path: third_party/ffmpeg-cache
+          key: ffmpeg-windows-${{ steps.ffmpeg.outputs.version }}
+          restore-keys: |
+            ffmpeg-windows-
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Frontend tests
+        run: npm test
+
+      - name: Build lean + offline installers
+        run: npm run pack:all
+
+      - name: Upload installers (workflow artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: meetly-windows-nsis
+          path: |
+            dist-installers/Meetly_*_x64-setup.exe
+            dist-installers/Meetly_*_x64-offline-setup.exe
+          if-no-files-found: error
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          generate_release_notes: true
+          body: |
+            ## Windows installers
+
+            | File | Variant |
+            |------|---------|
+            | `Meetly_*_x64-setup.exe` | **Lean (recommended)** — FFmpeg downloads on first encode |
+            | `Meetly_*_x64-offline-setup.exe` | **Offline** — FFmpeg bundled (larger) |
+
+            Same app id (`com.meetly.app`); installing one replaces the other.
+
+            Bundled/runtime FFmpeg pin: see `scripts/ffmpeg-pin.json` (Gyan essentials, GPLv3).
+          files: |
+            dist-installers/Meetly_*_x64-setup.exe
+            dist-installers/Meetly_*_x64-offline-setup.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

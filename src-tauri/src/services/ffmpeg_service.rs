@@ -89,9 +89,12 @@ fn binary_runs(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-/// Prefer the app-managed binary under app data; fall back to PATH / exe-adjacent.
+/// Prefer managed (app data) download, then installer-bundled sidecar, then PATH.
 pub fn resolve_ffmpeg_path() -> Option<PathBuf> {
     if let Some(path) = managed_binary_path().filter(|p| p.exists() && binary_runs(p)) {
+        return Some(path);
+    }
+    if let Some(path) = bundled_binary_path().filter(|p| binary_runs(p)) {
         return Some(path);
     }
     let fallback = ffmpeg_sidecar::paths::ffmpeg_path();
@@ -100,6 +103,44 @@ pub fn resolve_ffmpeg_path() -> Option<PathBuf> {
     } else {
         None
     }
+}
+
+/// Offline NSIS builds ship FFmpeg via Tauri `externalBin` next to the app exe.
+/// Production strips the target triple (`ffmpeg.exe`); `tauri dev` keeps it
+/// (`ffmpeg-<triple>.exe`).
+fn bundled_binary_path() -> Option<PathBuf> {
+    let dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
+    bundled_candidates_in(&dir)
+        .into_iter()
+        .find(|p| p.exists())
+}
+
+fn bundled_candidates_in(dir: &Path) -> Vec<PathBuf> {
+    let mut candidates: Vec<PathBuf> = Vec::new();
+
+    let mut production = dir.join("ffmpeg");
+    if cfg!(windows) {
+        production.set_extension("exe");
+    }
+    candidates.push(production);
+
+    if let Ok(triple) = std::env::var("TAURI_ENV_TARGET_TRIPLE") {
+        if !triple.is_empty() {
+            let mut named = dir.join(format!("ffmpeg-{triple}"));
+            if cfg!(windows) {
+                named.set_extension("exe");
+            }
+            candidates.push(named);
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        candidates.push(dir.join("ffmpeg-x86_64-pc-windows-msvc.exe"));
+        candidates.push(dir.join("ffmpeg-aarch64-pc-windows-msvc.exe"));
+    }
+
+    candidates
 }
 
 pub fn is_ready() -> bool {
@@ -258,7 +299,9 @@ fn download_and_install(on_progress: impl Fn(&str, u64, u64, &str)) -> CmdResult
 
 #[cfg(windows)]
 fn download_and_install_windows(on_progress: &ProgressCb<'_>) -> CmdResult<()> {
-    const URL: &str = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip";
+    // Keep in sync with scripts/ffmpeg-pin.json (offline installer uses the same pin).
+    const URL: &str =
+        "https://github.com/GyanD/codexffmpeg/releases/download/8.1/ffmpeg-8.1-essentials_build.zip";
 
     let dest_dir = install_dir()?;
     fs::create_dir_all(&dest_dir).map_err(|e| {
@@ -399,5 +442,38 @@ mod tests {
         #[cfg(windows)]
         assert_eq!(path.extension().and_then(|e| e.to_str()), Some("exe"));
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn bundled_candidates_include_production_name() {
+        let dir = PathBuf::from("C:\\fake\\app");
+        let candidates = bundled_candidates_in(&dir);
+        #[cfg(windows)]
+        {
+            assert!(candidates.iter().any(|p| p.ends_with("ffmpeg.exe")));
+            assert!(candidates
+                .iter()
+                .any(|p| p.ends_with("ffmpeg-x86_64-pc-windows-msvc.exe")));
+        }
+        #[cfg(not(windows))]
+        {
+            assert!(candidates.iter().any(|p| p.ends_with("ffmpeg")));
+        }
+    }
+
+    #[test]
+    fn bundled_candidates_include_tauri_env_triple() {
+        std::env::set_var("TAURI_ENV_TARGET_TRIPLE", "x86_64-pc-windows-msvc");
+        let dir = PathBuf::from("/app");
+        let candidates = bundled_candidates_in(&dir);
+        std::env::remove_var("TAURI_ENV_TARGET_TRIPLE");
+        assert!(
+            candidates.iter().any(|p| {
+                p.file_name()
+                    .and_then(|n| n.to_str())
+                    .is_some_and(|n| n.starts_with("ffmpeg-x86_64-pc-windows-msvc"))
+            }),
+            "missing triple candidate: {candidates:?}"
+        );
     }
 }
