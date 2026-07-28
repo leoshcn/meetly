@@ -24,6 +24,44 @@ import {
   type UpdatePhase,
 } from "./updateGate";
 
+function updaterFailureMessage(err: unknown): string {
+  if (typeof err === "string" && err.trim()) {
+    return mapUpdaterNetworkMessage(err);
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return mapUpdaterNetworkMessage(err.message);
+  }
+  if (typeof err === "object" && err !== null) {
+    const record = err as Record<string, unknown>;
+    if (typeof record.message === "string" && record.message.trim()) {
+      return mapUpdaterNetworkMessage(record.message);
+    }
+  }
+  try {
+    return mapUpdaterNetworkMessage(friendlyErrorMessage(err as AppError));
+  } catch {
+    return "检查更新失败，请稍后重试。";
+  }
+}
+
+function mapUpdaterNetworkMessage(raw: string): string {
+  const text = raw.trim();
+  if (!text || text === "操作失败" || text === "Unexpected error") {
+    return "检查更新失败，请稍后重试。";
+  }
+  const lower = text.toLowerCase();
+  if (
+    lower.includes("404") ||
+    lower.includes("not found") ||
+    lower.includes("failed to fetch") ||
+    lower.includes("error sending request") ||
+    lower.includes("connection")
+  ) {
+    return "无法获取更新信息（发布通道暂不可用或网络异常）。";
+  }
+  return text;
+}
+
 type AppUpdateContextValue = {
   phase: UpdatePhase;
   currentVersion: string | null;
@@ -96,7 +134,7 @@ export function AppUpdateProvider({ appBusy, children }: ProviderProps) {
         setPhase("idle");
         return;
       }
-      setError(friendlyErrorMessage(err as AppError));
+      setError(updaterFailureMessage(err));
       setPhase("error");
     }
   }, [currentVersion]);
@@ -125,7 +163,7 @@ export function AppUpdateProvider({ appBusy, children }: ProviderProps) {
       await update.download((event) => applyProgress(event));
       setPhase("readyToInstall");
     } catch (err) {
-      setError(friendlyErrorMessage(err as AppError));
+      setError(updaterFailureMessage(err));
       setPhase("error");
     }
   }, [applyProgress]);
@@ -139,7 +177,7 @@ export function AppUpdateProvider({ appBusy, children }: ProviderProps) {
       await update.install();
       await appRelaunch();
     } catch (err) {
-      setError(friendlyErrorMessage(err as AppError));
+      setError(updaterFailureMessage(err));
       setPhase("error");
     }
   }, [appBusy]);
@@ -156,7 +194,7 @@ export function AppUpdateProvider({ appBusy, children }: ProviderProps) {
       setPhase("installing");
       await appRelaunch();
     } catch (err) {
-      setError(friendlyErrorMessage(err as AppError));
+      setError(updaterFailureMessage(err));
       setPhase("error");
     }
   }, [appBusy, applyProgress]);
