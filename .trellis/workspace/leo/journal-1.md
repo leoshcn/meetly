@@ -244,3 +244,36 @@ Implemented Windows NSIS lean+offline dual installers with pinned FFmpeg cache/p
 ### Next Steps
 
 - None - task complete
+
+
+## Session 8: Dark mode and empty-project default
+
+**Date**: 2026-07-28
+**Task**: Dark mode and empty-project default
+**Branch**: `main`
+
+### Summary
+
+Shipped Meetly dark display mode (system/light/dark via Settings Appearance) and empty-state new-project as default draft; archived both tasks after 0.2.0 release.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7d71d6b` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

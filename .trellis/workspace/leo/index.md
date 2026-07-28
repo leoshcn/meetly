@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 7
+- **Total Sessions**: 8
 - **Last Active**: 2026-07-28
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~246 | Active |
+| `journal-1.md` | ~279 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 8 | 2026-07-28 | Dark mode and empty-project default | `7d71d6b` | `main` |
 | 7 | 2026-07-28 | Packaging dual builds and GitHub Release | `f7378c4` | `main` |
 | 6 | 2026-07-28 | UX polish and credential test-connection | `fa936ae`, `eac7dbd` | `main` |
 | 5 | 2026-07-25 | Meeting recording with mix and FFmpeg settings | `b8e085a`, `a3bd801` | `main` |
