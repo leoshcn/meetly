@@ -177,3 +177,37 @@ Shipped in-app meeting recording: mic + system-speaker mix, configurable save di
 ### Next Steps
 
 - None - task complete
+
+
+## Session 6: UX polish and credential test-connection
+
+**Date**: 2026-07-28
+**Task**: UX polish and credential test-connection
+**Branch**: `main`
+
+### Summary
+
+Shipped ConfirmDialog, settings tabs, credential masks, and wide/narrow workspace layout; added Doubao/TOS/DashScope test-connection with form-prefer merge and probe fixes; corrected settings gear SVG; archived completed Trellis tasks.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `fa936ae` | (see git log) |
+| `eac7dbd` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete

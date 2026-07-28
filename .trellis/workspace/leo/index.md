@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
-- **Last Active**: 2026-07-25
+- **Total Sessions**: 6
+- **Last Active**: 2026-07-28
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~179 | Active |
+| `journal-1.md` | ~213 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-07-28 | UX polish and credential test-connection | `fa936ae`, `eac7dbd` | `main` |
 | 5 | 2026-07-25 | Meeting recording with mix and FFmpeg settings | `b8e085a`, `a3bd801` | `main` |
 | 4 | 2026-07-25 | Recording live waveform meter | `b8e085a` | `main` |
 | 3 | 2026-07-25 | Fix FFmpeg MSI download path | `a3bd801` | `main` |
