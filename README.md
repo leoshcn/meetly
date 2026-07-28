@@ -73,17 +73,27 @@ Two NSIS installers, same app id (installing one replaces the other):
 
 | Artifact | Contents | When to use |
 |----------|----------|-------------|
-| `Meetly_<ver>_x64-setup.exe` (**lean**, default) | App only | Normal installs; FFmpeg downloads on first need (~80–100 MiB) |
-| `Meetly_<ver>_x64-offline-setup.exe` | App + bundled FFmpeg | Slow / offline networks |
+| `Meetly_<ver>_x64-setup.exe` (**lean**, default) | App only | Normal installs; FFmpeg downloads on first need (~80–100 MiB); **in-app updater** uses this channel |
+| `Meetly_<ver>_x64-offline-setup.exe` | App + bundled FFmpeg | Slow / offline networks (manual install only) |
 
 ```bash
 npm run ffmpeg:prepare
 npm run pack:lean
 npm run pack:offline
-npm run pack:all        # → dist-installers/
+npm run pack:all        # → dist-installers/ (+ latest.json when signed)
 ```
 
-Push a version tag (or run **Actions → Release**) to build and attach both `.exe` files. Code signing is not configured yet.
+Push a version tag (or run **Actions → Release**) to build and attach both `.exe` files plus `latest.json` for the updater.
+
+### Auto-update (Windows)
+
+- Apps check `https://github.com/leoshcn/meetly/releases/latest/download/latest.json` on launch and from **Settings → About**.
+- Only the **lean** installer is published on the updater channel.
+- Release builds must sign artifacts with a Tauri updater key:
+  - Local: set `TAURI_SIGNING_PRIVATE_KEY` or `TAURI_SIGNING_PRIVATE_KEY_PATH` (optional `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`).
+  - CI: repository secrets `TAURI_SIGNING_PRIVATE_KEY` and optional `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`.
+- Generate keys once with `npm run tauri signer generate -- -w ~/.tauri/meetly.key` and keep the **private** key offline; the public key is embedded in `src-tauri/tauri.conf.json`.
+- Windows **Authenticode** / SmartScreen code signing is still not configured (separate from Tauri update signatures).
 
 Bundled FFmpeg is the Gyan **essentials** build (GPLv3). See [GyanD/codexffmpeg](https://github.com/GyanD/codexffmpeg).
 

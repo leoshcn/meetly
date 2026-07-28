@@ -1,6 +1,6 @@
 [package]
 name = "meetly"
-version = "0.2.0"
+version = "0.3.0"
 description = "Meetly desktop meeting assistant"
 authors = ["Meetly"]
 edition = "2021"
@@ -33,3 +33,7 @@ dirs = "5"
 # CLI wrapper only — we download the Windows essentials zip ourselves (avoids xz2).
 ffmpeg-sidecar = { version = "2", default-features = false }
 zip = { version = "2", default-features = false, features = ["deflate"] }
+tauri-plugin-process = "2"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-updater = "2"

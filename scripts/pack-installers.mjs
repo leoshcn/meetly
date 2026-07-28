@@ -85,13 +85,29 @@ function copyArtifact(suffix) {
   const dest = join(outDir, destName);
   copyFileSync(src.full, dest);
   console.log(`Copied:\n  ${src.full}\n→ ${dest}`);
+
+  const sigSrc = `${src.full}.sig`;
+  if (existsSync(sigSrc)) {
+    const sigDest = `${dest}.sig`;
+    copyFileSync(sigSrc, sigDest);
+    console.log(`Copied:\n  ${sigSrc}\n→ ${sigDest}`);
+  } else if (suffix === "lean") {
+    console.warn(
+      `Warning: no signature next to ${src.full}. Set TAURI_SIGNING_PRIVATE_KEY before packing for updater.`,
+    );
+  }
   return dest;
+}
+
+function writeLatestJson() {
+  run(process.execPath, [join("scripts", "write-latest-json.mjs")]);
 }
 
 function buildLean() {
   console.log("\n=== Building lean (no bundled FFmpeg) ===\n");
   runTauri(["build"]);
   copyArtifact("lean");
+  writeLatestJson();
 }
 
 function buildOffline() {

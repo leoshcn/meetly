@@ -1,0 +1,1 @@
+export { SettingsAboutPanel } from "./SettingsAbout";

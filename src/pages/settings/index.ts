@@ -1,1 +1,1 @@
-export { SettingsPage } from "./SettingsPage";
+export { SettingsPage, type SettingsTab } from "./SettingsPage";

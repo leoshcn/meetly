@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Place About panel and update UI under features/pages conventions"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend test expectations for update helpers and UI"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "Plugin registration and src-tauri layout for updater"}
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "Keep any thin IPC wrappers consistent with existing command/DTO style"}
+{"file": ".trellis/tasks/07-29-version-discovery-upgrade/design.md", "reason": "Updater architecture, CI latest.json, busy gate"}
+{"file": ".trellis/tasks/07-29-version-discovery-upgrade/prd.md", "reason": "Accepted requirements and acceptance criteria"}

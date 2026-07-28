@@ -4,19 +4,30 @@ import { SettingsCredentialsPanel } from "../../features/settings-credentials";
 import { SettingsRecordingPanel } from "../../features/settings-recording";
 import { SettingsFfmpegPanel } from "../../features/settings-ffmpeg";
 import { SettingsAppearancePanel } from "../../features/settings-appearance";
+import { SettingsAboutPanel } from "../../features/settings-about";
 import styles from "./SettingsPage.module.css";
 
-type SettingsTab = "credentials" | "transcription" | "recording" | "appearance";
+export type SettingsTab =
+  | "credentials"
+  | "transcription"
+  | "recording"
+  | "appearance"
+  | "about";
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "credentials", label: "凭证" },
   { id: "transcription", label: "转写与摘要" },
   { id: "recording", label: "录音与编码" },
   { id: "appearance", label: "外观" },
+  { id: "about", label: "关于" },
 ];
 
-export function SettingsPage() {
-  const [tab, setTab] = useState<SettingsTab>("credentials");
+type Props = {
+  initialTab?: SettingsTab;
+};
+
+export function SettingsPage({ initialTab = "credentials" }: Props) {
+  const [tab, setTab] = useState<SettingsTab>(initialTab);
 
   return (
     <div className={`${styles.page} meetly-fade-up`}>
@@ -62,6 +73,7 @@ export function SettingsPage() {
           </>
         )}
         {tab === "appearance" && <SettingsAppearancePanel />}
+        {tab === "about" && <SettingsAboutPanel />}
       </div>
     </div>
   );

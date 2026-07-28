@@ -73,17 +73,27 @@ Vite 会在 `http://localhost:1420` 启动，并打开 Meetly 窗口。
 
 | 产物 | 内容 | 适用场景 |
 |------|------|----------|
-| `Meetly_<ver>_x64-setup.exe`（**精简**，默认） | 仅应用 | 日常安装；首次需要时再下载 FFmpeg（约 80–100 MiB） |
-| `Meetly_<ver>_x64-offline-setup.exe` | 应用 + 内置 FFmpeg | 弱网 / 离线环境 |
+| `Meetly_<ver>_x64-setup.exe`（**精简**，默认） | 仅应用 | 日常安装；首次需要时再下载 FFmpeg（约 80–100 MiB）；**应用内更新**走此通道 |
+| `Meetly_<ver>_x64-offline-setup.exe` | 应用 + 内置 FFmpeg | 弱网 / 离线环境（仅手动安装） |
 
 ```bash
 npm run ffmpeg:prepare   # 缓存 pinned essentials 构建
 npm run pack:lean        # 精简包
 npm run pack:offline     # 离线包
-npm run pack:all         # 两者 → dist-installers/
+npm run pack:all         # 两者 → dist-installers/（签名后含 latest.json）
 ```
 
 推送版本 tag（或 Actions → Release → Run workflow）可触发 CI 构建并上传产物。
+
+### 自动更新（Windows）
+
+- 启动时与 **设置 → 关于** 会检查 `https://github.com/leoshcn/meetly/releases/latest/download/latest.json`。
+- 更新通道只发布 **精简** 安装包。
+- Release 构建需用 Tauri updater 私钥签名：
+  - 本地：设置 `TAURI_SIGNING_PRIVATE_KEY` 或 `TAURI_SIGNING_PRIVATE_KEY_PATH`（可选密码）。
+  - CI：仓库 Secrets `TAURI_SIGNING_PRIVATE_KEY` 与可选的 `TAURI_SIGNING_PRIVATE_KEY_PASSWORD`。
+- 密钥生成：`npm run tauri signer generate -- -w ~/.tauri/meetly.key`；私钥勿入库，公钥已写入 `src-tauri/tauri.conf.json`。
+- Windows Authenticode / SmartScreen 代码签名仍未配置（与 Tauri 更新签名无关）。
 
 ## 转写说明（简）
 

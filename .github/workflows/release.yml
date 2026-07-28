@@ -65,6 +65,9 @@ jobs:
         run: npm test
 
       - name: Build lean + offline installers
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: npm run pack:all
 
       - name: Upload installers (workflow artifacts)
@@ -73,7 +76,9 @@ jobs:
           name: meetly-windows-nsis
           path: |
             dist-installers/Meetly_*_x64-setup.exe
+            dist-installers/Meetly_*_x64-setup.exe.sig
             dist-installers/Meetly_*_x64-offline-setup.exe
+            dist-installers/latest.json
           if-no-files-found: error
 
       - name: Create GitHub Release
@@ -87,14 +92,18 @@ jobs:
 
             | File | Variant |
             |------|---------|
-            | `Meetly_*_x64-setup.exe` | **Lean (recommended)** — FFmpeg downloads on first encode |
-            | `Meetly_*_x64-offline-setup.exe` | **Offline** — FFmpeg bundled (larger) |
+            | `Meetly_*_x64-setup.exe` | **Lean (recommended)** — FFmpeg downloads on first encode; **in-app updater** uses this build |
+            | `Meetly_*_x64-offline-setup.exe` | **Offline** — FFmpeg bundled (larger); manual install only |
 
             Same app id (`com.meetly.app`); installing one replaces the other.
+
+            Auto-update manifest: `latest.json` (lean channel only).
 
             Bundled/runtime FFmpeg pin: see `scripts/ffmpeg-pin.json` (Gyan essentials, GPLv3).
           files: |
             dist-installers/Meetly_*_x64-setup.exe
+            dist-installers/Meetly_*_x64-setup.exe.sig
             dist-installers/Meetly_*_x64-offline-setup.exe
+            dist-installers/latest.json
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

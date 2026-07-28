@@ -1,14 +1,50 @@
 import { useState } from "react";
+import {
+  AppUpdateProvider,
+  UpdateBanner,
+  useAppUpdate,
+} from "../features/app-update";
 import { HomePage } from "../pages/home";
-import { SettingsPage } from "../pages/settings";
+import { SettingsPage, type SettingsTab } from "../pages/settings";
 import { IconButton, SettingsGearIcon } from "../shared/ui";
 
 type Screen = "home" | "settings";
 
-export function AppShell() {
-  const [screen, setScreen] = useState<Screen>("home");
-  const [transcribing, setTranscribing] = useState(false);
-  const [titleSuffix, setTitleSuffix] = useState<string | null>(null);
+function SettingsGearWithBadge() {
+  const { badgeVisible } = useAppUpdate();
+  return (
+    <span className="app-header-icon-wrap">
+      <SettingsGearIcon />
+      {badgeVisible ? (
+        <span className="app-header-badge" aria-hidden="true" />
+      ) : null}
+    </span>
+  );
+}
+
+function AppShellChrome({
+  screen,
+  setScreen,
+  settingsTab,
+  setSettingsTab,
+  workspaceBusy,
+  setWorkspaceBusy,
+  titleSuffix,
+  setTitleSuffix,
+}: {
+  screen: Screen;
+  setScreen: (s: Screen) => void;
+  settingsTab: SettingsTab;
+  setSettingsTab: (t: SettingsTab) => void;
+  workspaceBusy: boolean;
+  setWorkspaceBusy: (b: boolean) => void;
+  titleSuffix: string | null;
+  setTitleSuffix: (t: string | null) => void;
+}) {
+  function openAbout() {
+    setSettingsTab("about");
+    setScreen("settings");
+  }
 
   return (
     <div className="app-shell">
@@ -39,29 +75,58 @@ export function AppShell() {
           ) : (
             <IconButton
               label="设置"
-              onClick={() => setScreen("settings")}
+              onClick={() => {
+                setSettingsTab("credentials");
+                setScreen("settings");
+              }}
             >
-              <SettingsGearIcon />
+              <SettingsGearWithBadge />
             </IconButton>
           )}
         </div>
-        {transcribing && (
-          <div className="app-progress" role="progressbar" aria-label="转写进行中">
+        {workspaceBusy && (
+          <div className="app-progress" role="progressbar" aria-label="工作进行中">
             <div className="app-progress-bar" />
           </div>
         )}
       </header>
+      <UpdateBanner onOpenAbout={openAbout} />
       <main className="app-main">
-        {screen === "home" ? (
+        {screen === "settings" ? (
+          <SettingsPage key={settingsTab} initialTab={settingsTab} />
+        ) : (
           <HomePage
-            onOpenSettings={() => setScreen("settings")}
-            onTranscribingChange={setTranscribing}
+            onOpenSettings={() => {
+              setSettingsTab("credentials");
+              setScreen("settings");
+            }}
+            onTranscribingChange={setWorkspaceBusy}
             onActiveTitleChange={setTitleSuffix}
           />
-        ) : (
-          <SettingsPage />
         )}
       </main>
     </div>
+  );
+}
+
+export function AppShell() {
+  const [screen, setScreen] = useState<Screen>("home");
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("credentials");
+  const [workspaceBusy, setWorkspaceBusy] = useState(false);
+  const [titleSuffix, setTitleSuffix] = useState<string | null>(null);
+
+  return (
+    <AppUpdateProvider appBusy={workspaceBusy}>
+      <AppShellChrome
+        screen={screen}
+        setScreen={setScreen}
+        settingsTab={settingsTab}
+        setSettingsTab={setSettingsTab}
+        workspaceBusy={workspaceBusy}
+        setWorkspaceBusy={setWorkspaceBusy}
+        titleSuffix={titleSuffix}
+        setTitleSuffix={setTitleSuffix}
+      />
+    </AppUpdateProvider>
   );
 }

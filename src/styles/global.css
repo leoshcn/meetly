@@ -270,6 +270,38 @@ textarea:focus:not(:focus-visible) {
 
 
 
+.app-header-icon-wrap {
+
+  position: relative;
+
+  display: inline-flex;
+
+}
+
+
+
+.app-header-badge {
+
+  position: absolute;
+
+  top: -0.1rem;
+
+  right: -0.15rem;
+
+  width: 0.45rem;
+
+  height: 0.45rem;
+
+  border-radius: 50%;
+
+  background: var(--accent);
+
+  box-shadow: 0 0 0 2px var(--panel);
+
+}
+
+
+
 .app-progress {
 
   position: absolute;

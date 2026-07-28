@@ -55,3 +55,12 @@ export {
   recordStatus,
 } from "./commands/recording";
 export { ffmpegStatus, ffmpegDownload } from "./commands/ffmpeg";
+export {
+  appGetVersion,
+  updaterCheck,
+  appRelaunch,
+} from "./commands/updater";
+export type {
+  AvailableUpdate,
+  UpdateDownloadEvent,
+} from "./commands/updater";
