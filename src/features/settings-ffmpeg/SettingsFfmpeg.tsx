@@ -116,8 +116,8 @@ export function SettingsFfmpegPanel() {
     <section className={styles.panel}>
       <h2>FFmpeg（M4A 编码）</h2>
       <p className={styles.hint}>
-        录音默认混成 PCM；安装 FFmpeg 后可将文件压缩为 M4A（体积更小）。首次下载约
-        80–100 MB，国内网络可能需要数分钟。未安装时录音会保存为 WAV，同样可转写。
+        用于将录音压缩为更小的 M4A 文件。首次下载约 80–100 MB；未安装时录音仍可保存为
+        WAV 并正常转写。
       </p>
 
       <p className={styles.status}>

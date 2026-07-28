@@ -48,7 +48,7 @@ export function SettingsHotwordsPanel() {
   function addHotword() {
     const trimmed = draftWord.trim();
     if (!trimmed) {
-      setError("Hotwords cannot be empty");
+      setError("热词不能为空");
       return;
     }
     setHotwords((prev) => [...prev, trimmed]);
@@ -84,7 +84,7 @@ export function SettingsHotwordsPanel() {
       <div className={styles.block}>
         <h2>热词（转写）</h2>
         <p className={styles.hint}>
-          热词仅用于语音转写（ASR），不会发送给摘要模型。
+          热词用于提高专有名词、人名等在转写中的识别准确度，不会用于生成摘要。
         </p>
         <HotwordList words={hotwords} onRemove={removeHotword} />
         <div className={styles.row}>
@@ -108,7 +108,7 @@ export function SettingsHotwordsPanel() {
       <div className={styles.block}>
         <h2>上下文（摘要）</h2>
         <p className={styles.hint}>
-          上下文仅用于会议摘要生成，默认不会发送给转写服务。
+          上下文会在生成会议摘要时作为背景参考，例如项目背景、参会人角色等。
         </p>
         <textarea
           value={contextText}

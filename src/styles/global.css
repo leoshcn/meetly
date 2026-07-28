@@ -43,6 +43,7 @@ body {
 
 #root {
   min-height: 100vh;
+  height: 100vh;
 }
 
 :focus-visible {
@@ -60,9 +61,11 @@ textarea:focus:not(:focus-visible) {
 
 .app-shell {
   min-height: 100vh;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: var(--paper);
+  overflow: hidden;
 }
 
 .app-header {
@@ -132,6 +135,7 @@ textarea:focus:not(:focus-visible) {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
 @keyframes meetly-indeterminate {

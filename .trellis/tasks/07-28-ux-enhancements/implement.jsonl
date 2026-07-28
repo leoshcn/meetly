@@ -1,0 +1,6 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `py -3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Feature vs shared/ui placement for ConfirmDialog and settings tabs"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shared primitives live in shared/ui; no raw invoke in components"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend test expectations for UI changes"}
+{"file": ".trellis/tasks/07-28-ux-enhancements/design.md", "reason": "ConfirmDialog, tabs, sidebar, copy contracts"}
+{"file": ".trellis/tasks/07-28-ux-enhancements/prd.md", "reason": "Full AC including workspace layout"}

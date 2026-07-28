@@ -37,7 +37,70 @@
   min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+  overflow: hidden;
   animation: meetly-fade-up 280ms ease-out;
+}
+
+.tabsLayout {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: meetly-fade-up 280ms ease-out;
+}
+
+.workspaceTabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.15rem;
+  padding: 0.55rem 0.85rem 0;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+
+.workspaceTab,
+.workspaceTabActive {
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  padding: 0.5rem 0.75rem;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.workspaceTab:hover {
+  color: var(--ink);
+  background: var(--accent-soft);
+}
+
+.workspaceTabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.tabPanels {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.tabPanels .pane[hidden] {
+  display: none;
+}
+
+.tabPanels .pane:not([hidden]) {
+  flex: 1;
+  min-height: 0;
+  border-right: none;
+  border-bottom: none;
 }
 
 .pane {
@@ -60,6 +123,7 @@
   gap: var(--space-3);
   padding: 0.85rem 1.15rem;
   border-bottom: 1px solid var(--line);
+  flex-shrink: 0;
 }
 
 .paneHeader h2 {
@@ -78,18 +142,9 @@
   padding: 1rem 1.15rem 1.5rem;
 }
 
-@media (max-width: 960px) {
-  .split {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(16rem, 1fr) minmax(14rem, 1fr);
-  }
-
-  .pane {
-    border-right: none;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .pane:last-child {
-    border-bottom: none;
+@media (prefers-reduced-motion: reduce) {
+  .workspaceTab,
+  .workspaceTabActive {
+    transition: none;
   }
 }

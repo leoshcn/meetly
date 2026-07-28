@@ -96,7 +96,7 @@ export function SettingsRecordingPanel() {
     <section className={styles.panel}>
       <h2>录音保存位置</h2>
       <p className={styles.hint}>
-        会议录音会写入此文件夹。留空则使用默认路径（用户文档下的
+        会议录音会保存到此文件夹。未自定义时使用本机默认目录（文档下的
         Meetly/Recordings）。
       </p>
       <p className={styles.status}>
@@ -112,7 +112,7 @@ export function SettingsRecordingPanel() {
               setRecordingDir(e.target.value);
               setSavedHint(false);
             }}
-            placeholder="留空 = 使用默认目录"
+            placeholder="自定义目录路径"
             disabled={busy}
           />
         </label>

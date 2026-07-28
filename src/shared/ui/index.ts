@@ -1,2 +1,9 @@
 export { Button } from "./Button";
-export { IconButton, SettingsGearIcon } from "./IconButton";
+export { ConfirmDialog } from "./ConfirmDialog";
+export type { ConfirmDialogProps } from "./ConfirmDialog";
+export {
+  DeleteIcon,
+  IconButton,
+  RenameIcon,
+  SettingsGearIcon,
+} from "./IconButton";

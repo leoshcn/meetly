@@ -7,7 +7,13 @@ import {
   type Meeting,
 } from "../../ipc";
 import { errorTitle, friendlyErrorMessage } from "../../shared/lib";
-import { Button } from "../../shared/ui";
+import {
+  Button,
+  ConfirmDialog,
+  DeleteIcon,
+  IconButton,
+  RenameIcon,
+} from "../../shared/ui";
 import styles from "./MeetingSidebar.module.css";
 
 type Props = {
@@ -49,6 +55,8 @@ export function MeetingSidebar({
   const [errorCode, setErrorCode] = useState<string | undefined>();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<Meeting | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -86,23 +94,21 @@ export function MeetingSidebar({
     }
   }
 
-  async function handleDelete(meeting: Meeting) {
-    const label = meeting.title ?? meeting.id;
-    if (
-      !window.confirm(
-        `确定删除项目「${label}」？转写与摘要将一并删除（本地音频文件保留）。`,
-      )
-    ) {
-      return;
-    }
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const meeting = pendingDelete;
+    setDeleting(true);
     try {
       await meetingsDelete(meeting.id);
+      setPendingDelete(null);
       onDeleted(meeting.id);
       await load();
     } catch (err) {
       const appErr = err as AppError;
       setError(friendlyErrorMessage(appErr));
       setErrorCode(errorTitle(appErr));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -131,6 +137,10 @@ export function MeetingSidebar({
     );
   }
 
+  const deleteLabel = pendingDelete
+    ? (pendingDelete.title ?? pendingDelete.id)
+    : "";
+
   return (
     <aside className={styles.sidebar}>
       <div className={styles.header}>
@@ -156,7 +166,9 @@ export function MeetingSidebar({
       )}
       <ul className={styles.list}>
         {meetings.length === 0 ? (
-          <li className={styles.empty}>暂无项目</li>
+          <li className={styles.empty}>
+            暂无项目。点击上方「新建项目」开始录音或导入音频。
+          </li>
         ) : (
           meetings.map((meeting) => {
             const active = meeting.id === activeMeetingId;
@@ -211,21 +223,23 @@ export function MeetingSidebar({
                       </span>
                     </button>
                     <div className={styles.rowActions}>
-                      <Button
-                        variant="ghost"
+                      <IconButton
+                        label="重命名"
+                        className={styles.rowIcon}
                         onClick={() => {
                           setEditingId(meeting.id);
                           setEditTitle(meeting.title ?? "");
                         }}
                       >
-                        重命名
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => void handleDelete(meeting)}
+                        <RenameIcon />
+                      </IconButton>
+                      <IconButton
+                        label="删除"
+                        className={`${styles.rowIcon} ${styles.rowIconDanger}`}
+                        onClick={() => setPendingDelete(meeting)}
                       >
-                        删除
-                      </Button>
+                        <DeleteIcon />
+                      </IconButton>
                     </div>
                   </>
                 )}
@@ -234,6 +248,19 @@ export function MeetingSidebar({
           })
         )}
       </ul>
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="删除项目"
+        description={`确定删除项目「${deleteLabel}」？转写与摘要将一并删除（本地音频文件保留）。`}
+        confirmLabel="删除"
+        cancelLabel="取消"
+        danger
+        busy={deleting}
+        onConfirm={() => void confirmDelete()}
+        onCancel={() => {
+          if (!deleting) setPendingDelete(null);
+        }}
+      />
     </aside>
   );
 }

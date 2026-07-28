@@ -130,20 +130,32 @@
 
 .rowActions {
   display: none;
-  gap: 0.15rem;
-  padding: 0 0.25rem 0.3rem;
-  flex-wrap: wrap;
+  gap: 0.1rem;
+  padding: 0 0.2rem 0.25rem;
+  justify-content: flex-end;
 }
 
 .item:hover .rowActions,
 .item:focus-within .rowActions,
-.itemActive .rowActions {
+.itemActive:hover .rowActions,
+.itemActive:focus-within .rowActions {
   display: flex;
 }
 
-.rowActions :global(button) {
-  font-size: 0.72rem;
-  padding: 0.15rem 0.4rem;
+.rowIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+}
+
+.rowIcon svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.rowIconDanger:hover:not(:disabled) {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 8%, var(--panel));
+  border-color: color-mix(in srgb, var(--danger) 25%, var(--line));
 }
 
 .editRow {
@@ -177,6 +189,7 @@
   color: var(--ink-muted);
   font-size: 0.85rem;
   padding: 0.85rem 0.55rem;
+  line-height: 1.45;
 }
 
 .error {
