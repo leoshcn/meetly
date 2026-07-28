@@ -3,6 +3,10 @@ export type { AppError } from "./client";
 export type {
   Settings,
   SettingsUpdate,
+  SettingsTestDoubaoOverrides,
+  SettingsTestTosOverrides,
+  SettingsTestDashscopeOverrides,
+  SettingsTestResult,
   HealthResponse,
   Meeting,
   Transcript,
@@ -25,6 +29,9 @@ export {
   settingsClearDoubaoCredentials,
   settingsClearDashscopeCredentials,
   settingsClearTosCredentials,
+  settingsTestDoubao,
+  settingsTestTos,
+  settingsTestDashscope,
 } from "./commands/settings";
 export {
   meetingsCreateFromFile,

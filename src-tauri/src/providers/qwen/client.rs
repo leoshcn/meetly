@@ -11,6 +11,10 @@ use crate::services::credentials::DashScopeCredentials;
 pub const CHAT_COMPLETIONS_URL: &str =
     "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
 
+/// DashScope OpenAI-compatible models list (credentials probe).
+pub const MODELS_URL: &str =
+    "https://dashscope.aliyuncs.com/compatible-mode/v1/models";
+
 /// Confirmed model id from DashScope / QwenCloud docs.
 pub const MODEL_ID: &str = "qwen3.7-plus";
 
@@ -160,6 +164,36 @@ impl HttpQwenClient {
             client,
             url: CHAT_COMPLETIONS_URL.to_string(),
         })
+    }
+
+    /// Connectivity probe: GET /models with Bearer key. Never logs the key.
+    pub fn list_models(&self, credentials: &DashScopeCredentials) -> CmdResult<()> {
+        let response = self
+            .client
+            .get(MODELS_URL)
+            .header(
+                "Authorization",
+                format!("Bearer {}", credentials.api_key),
+            )
+            .send()
+            .map_err(|_| AppErrorDto::summary_provider_error("无法连接 DashScope 服务"))?;
+
+        let status = response.status();
+        // Drain body without logging (may contain model metadata only; still discard).
+        let _ = response.text();
+
+        let code = status.as_u16();
+        if status.is_success() {
+            return Ok(());
+        }
+        if code == 401 || code == 403 {
+            return Err(AppErrorDto::summary_provider_error(
+                "DashScope API Key 无效或无权限",
+            ));
+        }
+        Err(AppErrorDto::summary_provider_error(format!(
+            "DashScope 连接失败 (HTTP {code})"
+        )))
     }
 }
 

@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "Verify commands registered in api-shape"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Error envelope compliance"}
+{"file": ".trellis/tasks/07-28-credentials-test-connection/prd.md", "reason": "AC1-AC7"}
+{"file": ".trellis/tasks/07-28-credentials-test-connection/design.md", "reason": "Probe and merge contracts"}

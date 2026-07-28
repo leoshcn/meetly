@@ -5,6 +5,9 @@ import {
   settingsClearDoubaoCredentials,
   settingsClearTosCredentials,
   settingsGet,
+  settingsTestDashscope,
+  settingsTestDoubao,
+  settingsTestTos,
   settingsUpdate,
 } from "./settings";
 
@@ -108,5 +111,51 @@ describe("settings commands", () => {
       "settings_clear_tos_credentials",
       undefined,
     );
+  });
+
+  it("settingsTestDoubao passes optional overrides", async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true });
+    __setInvokeForTests(invoke);
+    await settingsTestDoubao({ doubao_app_id: "app", doubao_access_token: "tok" });
+    expect(invoke).toHaveBeenCalledWith("settings_test_doubao", {
+      doubao_app_id: "app",
+      doubao_access_token: "tok",
+    });
+  });
+
+  it("settingsTestDoubao allows empty overrides", async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true });
+    __setInvokeForTests(invoke);
+    await settingsTestDoubao();
+    expect(invoke).toHaveBeenCalledWith("settings_test_doubao", {
+      doubao_app_id: undefined,
+      doubao_access_token: undefined,
+    });
+  });
+
+  it("settingsTestTos passes optional overrides", async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true });
+    __setInvokeForTests(invoke);
+    await settingsTestTos({
+      tos_access_key_id: "ak",
+      tos_region: "cn-beijing",
+      tos_bucket: "b",
+    });
+    expect(invoke).toHaveBeenCalledWith("settings_test_tos", {
+      tos_access_key_id: "ak",
+      tos_secret_access_key: undefined,
+      tos_region: "cn-beijing",
+      tos_bucket: "b",
+      tos_endpoint: undefined,
+    });
+  });
+
+  it("settingsTestDashscope passes optional override", async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true });
+    __setInvokeForTests(invoke);
+    await settingsTestDashscope({ dashscope_api_key: "sk-x" });
+    expect(invoke).toHaveBeenCalledWith("settings_test_dashscope", {
+      dashscope_api_key: "sk-x",
+    });
   });
 });

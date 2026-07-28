@@ -1,5 +1,12 @@
 import { invokeCommand } from "../client";
-import type { Settings, SettingsUpdate } from "../types";
+import type {
+  Settings,
+  SettingsTestDashscopeOverrides,
+  SettingsTestDoubaoOverrides,
+  SettingsTestResult,
+  SettingsTestTosOverrides,
+  SettingsUpdate,
+} from "../types";
 
 export function settingsGet(): Promise<Settings> {
   return invokeCommand<Settings>("settings_get");
@@ -19,4 +26,33 @@ export function settingsClearDashscopeCredentials(): Promise<Settings> {
 
 export function settingsClearTosCredentials(): Promise<Settings> {
   return invokeCommand<Settings>("settings_clear_tos_credentials");
+}
+
+export function settingsTestDoubao(
+  overrides: SettingsTestDoubaoOverrides = {},
+): Promise<SettingsTestResult> {
+  return invokeCommand<SettingsTestResult>("settings_test_doubao", {
+    doubao_app_id: overrides.doubao_app_id,
+    doubao_access_token: overrides.doubao_access_token,
+  });
+}
+
+export function settingsTestTos(
+  overrides: SettingsTestTosOverrides = {},
+): Promise<SettingsTestResult> {
+  return invokeCommand<SettingsTestResult>("settings_test_tos", {
+    tos_access_key_id: overrides.tos_access_key_id,
+    tos_secret_access_key: overrides.tos_secret_access_key,
+    tos_region: overrides.tos_region,
+    tos_bucket: overrides.tos_bucket,
+    tos_endpoint: overrides.tos_endpoint,
+  });
+}
+
+export function settingsTestDashscope(
+  overrides: SettingsTestDashscopeOverrides = {},
+): Promise<SettingsTestResult> {
+  return invokeCommand<SettingsTestResult>("settings_test_dashscope", {
+    dashscope_api_key: overrides.dashscope_api_key,
+  });
 }

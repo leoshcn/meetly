@@ -33,6 +33,30 @@ export type SettingsUpdate = {
   recording_dir?: string;
 };
 
+/** Optional write-only overrides for settings_test_doubao; empty/omit → use keyring. */
+export type SettingsTestDoubaoOverrides = {
+  doubao_app_id?: string;
+  doubao_access_token?: string;
+};
+
+/** Optional write-only overrides for settings_test_tos; empty/omit → use keyring/SQLite. */
+export type SettingsTestTosOverrides = {
+  tos_access_key_id?: string;
+  tos_secret_access_key?: string;
+  tos_region?: string;
+  tos_bucket?: string;
+  tos_endpoint?: string;
+};
+
+/** Optional write-only override for settings_test_dashscope; empty/omit → use keyring. */
+export type SettingsTestDashscopeOverrides = {
+  dashscope_api_key?: string;
+};
+
+export type SettingsTestResult = {
+  ok: true;
+};
+
 export type HealthResponse = {
   status: "ok" | string;
   version: string;

@@ -4,8 +4,14 @@ import {
   settingsClearDoubaoCredentials,
   settingsClearTosCredentials,
   settingsGet,
+  settingsTestDashscope,
+  settingsTestDoubao,
+  settingsTestTos,
   settingsUpdate,
   type AppError,
+  type SettingsTestDashscopeOverrides,
+  type SettingsTestDoubaoOverrides,
+  type SettingsTestTosOverrides,
 } from "../../ipc";
 import { friendlyErrorMessage } from "../../shared/lib";
 import { Button, ConfirmDialog } from "../../shared/ui";
@@ -14,9 +20,16 @@ import styles from "./SettingsCredentials.module.css";
 const SECRET_MASK = "••••••••••••";
 
 type ClearTarget = "doubao" | "dashscope" | "tos" | null;
+type TestStatus = "idle" | "testing" | "ok";
 
 function secretDisplay(masked: boolean, value: string): string {
   return masked ? SECRET_MASK : value;
+}
+
+function isUsableSecret(masked: boolean, value: string): boolean {
+  if (masked) return false;
+  const trimmed = value.trim();
+  return trimmed.length > 0 && trimmed !== SECRET_MASK;
 }
 
 export function SettingsCredentialsPanel() {
@@ -43,6 +56,9 @@ export function SettingsCredentialsPanel() {
   const [doubaoSavedHint, setDoubaoSavedHint] = useState(false);
   const [dashscopeSavedHint, setDashscopeSavedHint] = useState(false);
   const [tosSavedHint, setTosSavedHint] = useState(false);
+  const [doubaoTest, setDoubaoTest] = useState<TestStatus>("idle");
+  const [dashscopeTest, setDashscopeTest] = useState<TestStatus>("idle");
+  const [tosTest, setTosTest] = useState<TestStatus>("idle");
   const [clearTarget, setClearTarget] = useState<ClearTarget>(null);
 
   const applySettingsFlags = useCallback(
@@ -163,6 +179,7 @@ export function SettingsCredentialsPanel() {
     setStatus("saving");
     setDoubaoError(null);
     setDoubaoSavedHint(false);
+    setDoubaoTest("idle");
     try {
       const settings = await settingsUpdate({
         doubao_app_id: nextAppId,
@@ -186,6 +203,7 @@ export function SettingsCredentialsPanel() {
     setStatus("saving");
     setDoubaoError(null);
     setDoubaoSavedHint(false);
+    setDoubaoTest("idle");
     try {
       const settings = await settingsClearDoubaoCredentials();
       applySettingsFlags(settings);
@@ -206,6 +224,7 @@ export function SettingsCredentialsPanel() {
     setStatus("saving");
     setDashscopeError(null);
     setDashscopeSavedHint(false);
+    setDashscopeTest("idle");
     try {
       const settings = await settingsUpdate({
         dashscope_api_key: nextKey,
@@ -230,6 +249,7 @@ export function SettingsCredentialsPanel() {
     setStatus("saving");
     setDashscopeError(null);
     setDashscopeSavedHint(false);
+    setDashscopeTest("idle");
     try {
       const settings = await settingsClearDashscopeCredentials();
       applySettingsFlags(settings);
@@ -247,6 +267,7 @@ export function SettingsCredentialsPanel() {
     setStatus("saving");
     setTosError(null);
     setTosSavedHint(false);
+    setTosTest("idle");
     try {
       const update: Parameters<typeof settingsUpdate>[0] = {
         tos_region: tosRegion,
@@ -286,6 +307,7 @@ export function SettingsCredentialsPanel() {
     setStatus("saving");
     setTosError(null);
     setTosSavedHint(false);
+    setTosTest("idle");
     try {
       const settings = await settingsClearTosCredentials();
       applySettingsFlags(settings);
@@ -306,6 +328,72 @@ export function SettingsCredentialsPanel() {
       await clearDashscope();
     } else if (clearTarget === "tos") {
       await clearTos();
+    }
+  }
+
+  async function testDoubao() {
+    setDoubaoTest("testing");
+    setDoubaoError(null);
+    setDoubaoSavedHint(false);
+    const overrides: SettingsTestDoubaoOverrides = {};
+    if (isUsableSecret(appIdMasked, appId)) {
+      overrides.doubao_app_id = appId.trim();
+    }
+    if (isUsableSecret(accessTokenMasked, accessToken)) {
+      overrides.doubao_access_token = accessToken.trim();
+    }
+    try {
+      await settingsTestDoubao(overrides);
+      setDoubaoTest("ok");
+    } catch (err) {
+      setDoubaoTest("idle");
+      setDoubaoError(friendlyErrorMessage(err as AppError));
+    }
+  }
+
+  async function testTos() {
+    setTosTest("testing");
+    setTosError(null);
+    setTosSavedHint(false);
+    const overrides: SettingsTestTosOverrides = {};
+    if (isUsableSecret(tosAkMasked, tosAk)) {
+      overrides.tos_access_key_id = tosAk.trim();
+    }
+    if (isUsableSecret(tosSkMasked, tosSk)) {
+      overrides.tos_secret_access_key = tosSk.trim();
+    }
+    if (tosRegion.trim().length > 0) {
+      overrides.tos_region = tosRegion.trim();
+    }
+    if (tosBucket.trim().length > 0) {
+      overrides.tos_bucket = tosBucket.trim();
+    }
+    if (tosEndpoint.trim().length > 0) {
+      overrides.tos_endpoint = tosEndpoint.trim();
+    }
+    try {
+      await settingsTestTos(overrides);
+      setTosTest("ok");
+    } catch (err) {
+      setTosTest("idle");
+      setTosError(friendlyErrorMessage(err as AppError));
+    }
+  }
+
+  async function testDashscope() {
+    setDashscopeTest("testing");
+    setDashscopeError(null);
+    setDashscopeSavedHint(false);
+    const overrides: SettingsTestDashscopeOverrides = {};
+    if (isUsableSecret(dashscopeMasked, dashscopeKey)) {
+      overrides.dashscope_api_key = dashscopeKey.trim();
+    }
+    try {
+      await settingsTestDashscope(overrides);
+      setDashscopeTest("ok");
+    } catch (err) {
+      setDashscopeTest("idle");
+      setDashscopeError(friendlyErrorMessage(err as AppError));
     }
   }
 
@@ -350,6 +438,38 @@ export function SettingsCredentialsPanel() {
     tosBucket.trim().length > 0 &&
     tosSecretsReady &&
     status !== "saving" &&
+    status !== "loading";
+
+  // Merge-ready: form non-empty secret OR saved (configured). Empty unmasked → backend uses keyring.
+  const doubaoAppReady =
+    isUsableSecret(appIdMasked, appId) || doubaoConfigured;
+  const doubaoTokenReady =
+    isUsableSecret(accessTokenMasked, accessToken) || doubaoConfigured;
+  const doubaoTestIncomplete = !(doubaoAppReady && doubaoTokenReady);
+  const canTestDoubao =
+    !doubaoTestIncomplete &&
+    doubaoTest !== "testing" &&
+    status !== "loading";
+
+  const tosAkReady = isUsableSecret(tosAkMasked, tosAk) || tosConfigured;
+  const tosSkReady = isUsableSecret(tosSkMasked, tosSk) || tosConfigured;
+  const tosRegionReady = tosRegion.trim().length > 0 || tosConfigured;
+  const tosBucketReady = tosBucket.trim().length > 0 || tosConfigured;
+  const tosTestIncomplete = !(
+    tosAkReady &&
+    tosSkReady &&
+    tosRegionReady &&
+    tosBucketReady
+  );
+  const canTestTos =
+    !tosTestIncomplete && tosTest !== "testing" && status !== "loading";
+
+  const dashscopeKeyReady =
+    isUsableSecret(dashscopeMasked, dashscopeKey) || dashscopeConfigured;
+  const dashscopeTestIncomplete = !dashscopeKeyReady;
+  const canTestDashscope =
+    !dashscopeTestIncomplete &&
+    dashscopeTest !== "testing" &&
     status !== "loading";
 
   const clearCopy =
@@ -400,6 +520,7 @@ export function SettingsCredentialsPanel() {
                   e.target.value,
                 );
                 setDoubaoSavedHint(false);
+                setDoubaoTest("idle");
               }}
               placeholder="Doubao App Id"
             />
@@ -425,6 +546,7 @@ export function SettingsCredentialsPanel() {
                   e.target.value,
                 );
                 setDoubaoSavedHint(false);
+                setDoubaoTest("idle");
               }}
               placeholder="Doubao Access Token"
             />
@@ -443,7 +565,22 @@ export function SettingsCredentialsPanel() {
           >
             清除凭证
           </Button>
-          {doubaoSavedHint && <span className={styles.ok}>已更新</span>}
+          <Button
+            variant="secondary"
+            onClick={() => void testDoubao()}
+            disabled={!canTestDoubao}
+            title={
+              doubaoTestIncomplete
+                ? "请填写 App Id 与 Access Token，或先保存凭证后再测试"
+                : undefined
+            }
+          >
+            {doubaoTest === "testing" ? "测试中…" : "测试连接"}
+          </Button>
+          {doubaoSavedHint && doubaoTest !== "ok" && (
+            <span className={styles.ok}>已更新</span>
+          )}
+          {doubaoTest === "ok" && <span className={styles.ok}>连接正常</span>}
         </div>
         {doubaoError && <p className={styles.error}>{doubaoError}</p>}
       </section>
@@ -475,6 +612,7 @@ export function SettingsCredentialsPanel() {
                   e.target.value,
                 );
                 setTosSavedHint(false);
+                setTosTest("idle");
               }}
               placeholder="TOS Access Key Id"
             />
@@ -494,6 +632,7 @@ export function SettingsCredentialsPanel() {
                   e.target.value,
                 );
                 setTosSavedHint(false);
+                setTosTest("idle");
               }}
               placeholder="TOS Secret Access Key"
             />
@@ -507,6 +646,7 @@ export function SettingsCredentialsPanel() {
               onChange={(e) => {
                 setTosRegion(e.target.value);
                 setTosSavedHint(false);
+                setTosTest("idle");
               }}
               placeholder="例如 cn-beijing"
             />
@@ -520,6 +660,7 @@ export function SettingsCredentialsPanel() {
               onChange={(e) => {
                 setTosBucket(e.target.value);
                 setTosSavedHint(false);
+                setTosTest("idle");
               }}
               placeholder="Bucket 名称"
             />
@@ -533,6 +674,7 @@ export function SettingsCredentialsPanel() {
               onChange={(e) => {
                 setTosEndpoint(e.target.value);
                 setTosSavedHint(false);
+                setTosTest("idle");
               }}
               placeholder="默认按 Region 自动推断"
             />
@@ -553,7 +695,22 @@ export function SettingsCredentialsPanel() {
           >
             清除 TOS 配置
           </Button>
-          {tosSavedHint && <span className={styles.ok}>已更新</span>}
+          <Button
+            variant="secondary"
+            onClick={() => void testTos()}
+            disabled={!canTestTos}
+            title={
+              tosTestIncomplete
+                ? "请填写 Access Key、Secret Key、Region 与 Bucket，或先保存后再测试"
+                : undefined
+            }
+          >
+            {tosTest === "testing" ? "测试中…" : "测试连接"}
+          </Button>
+          {tosSavedHint && tosTest !== "ok" && (
+            <span className={styles.ok}>已更新</span>
+          )}
+          {tosTest === "ok" && <span className={styles.ok}>连接正常</span>}
         </div>
         {tosError && <p className={styles.error}>{tosError}</p>}
       </section>
@@ -587,6 +744,7 @@ export function SettingsCredentialsPanel() {
                   e.target.value,
                 );
                 setDashscopeSavedHint(false);
+                setDashscopeTest("idle");
               }}
               placeholder="DashScope API Key"
             />
@@ -608,7 +766,24 @@ export function SettingsCredentialsPanel() {
           >
             清除 API Key
           </Button>
-          {dashscopeSavedHint && <span className={styles.ok}>已更新</span>}
+          <Button
+            variant="secondary"
+            onClick={() => void testDashscope()}
+            disabled={!canTestDashscope}
+            title={
+              dashscopeTestIncomplete
+                ? "请填写 API Key，或先保存后再测试"
+                : undefined
+            }
+          >
+            {dashscopeTest === "testing" ? "测试中…" : "测试连接"}
+          </Button>
+          {dashscopeSavedHint && dashscopeTest !== "ok" && (
+            <span className={styles.ok}>已更新</span>
+          )}
+          {dashscopeTest === "ok" && (
+            <span className={styles.ok}>连接正常</span>
+          )}
         </div>
         {dashscopeError && <p className={styles.error}>{dashscopeError}</p>}
       </section>

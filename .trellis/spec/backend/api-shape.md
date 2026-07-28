@@ -22,6 +22,9 @@ Applies when adding or changing any `#[tauri::command]`, frontend `invoke` wrapp
 | `settings_clear_doubao_credentials` | (none) | `Settings` | same |
 | `settings_clear_dashscope_credentials` | (none) | `Settings` | same |
 | `settings_clear_tos_credentials` | (none) | `Settings` | same |
+| `settings_test_doubao` | optional `{ doubao_app_id?, doubao_access_token? }` | `{ ok: true }` | same — merges overrides with keyring; **does not persist** |
+| `settings_test_tos` | optional `{ tos_access_key_id?, tos_secret_access_key?, tos_region?, tos_bucket?, tos_endpoint? }` | `{ ok: true }` | same — merges with keyring/SQLite; HeadBucket probe; **does not persist** |
+| `settings_test_dashscope` | optional `{ dashscope_api_key? }` | `{ ok: true }` | same — merges with keyring; GET `/compatible-mode/v1/models`; **does not persist** |
 | `meetings_create_from_file` | `{ path: string }` | `Meeting` | `src-tauri/src/commands/meetings.rs` |
 | `meetings_list` | (none) | `Meeting[]` (created_at DESC) | same |
 | `meetings_get` | `{ meeting_id: string }` | `Meeting` | same |
@@ -81,6 +84,22 @@ type SettingsUpdate = {
   /** Absolute path or empty to reset default. */
   recording_dir?: string;
 };
+/** Optional write-only overrides for settings_test_*; empty/omit → use saved. Never persisted by test commands. */
+type SettingsTestDoubaoOverrides = {
+  doubao_app_id?: string;
+  doubao_access_token?: string;
+};
+type SettingsTestTosOverrides = {
+  tos_access_key_id?: string;
+  tos_secret_access_key?: string;
+  tos_region?: string;
+  tos_bucket?: string;
+  tos_endpoint?: string;
+};
+type SettingsTestDashscopeOverrides = {
+  dashscope_api_key?: string;
+};
+type SettingsTestResult = { ok: true };
 type Meeting = {
   id: string;
   source_path: string;
@@ -180,6 +199,7 @@ Async poll window: **45 minutes** client-side (`ASR_TIMEOUT` on exceed). Pre-sig
 | Empty / whitespace hotword | `SETTINGS_INVALID` | No DB write |
 | SQLite failure | `DB_ERROR` | Generic message (no filesystem paths) |
 | Missing Doubao credentials | `ASR_NOT_CONFIGURED` | No provider call |
+| Incomplete Doubao/TOS merge for test | `SETTINGS_INVALID` | Inline on credentials test |
 | Audio file > 512 MiB | `ASR_PAYLOAD_TOO_LARGE` | Reject before create / start |
 | > 20 MiB without complete TOS config | `TOS_NOT_CONFIGURED` | Fail fast; no job success |
 | TOS put / pre-sign failure | `TOS_UPLOAD_ERROR` | Job → `failed` (if already started) |
@@ -207,7 +227,7 @@ Async poll window: **45 minutes** client-side (`ASR_TIMEOUT` on exceed). Pre-sig
 ## Tests Required
 
 - Rust: settings (incl. Doubao / DashScope / TOS configured flags, no secret echo), hotwords builder, flash + async stub job transitions, TOS stub put/presign, async poll timeout → `ASR_TIMEOUT`, summary prompt/parse with stub Qwen.
-- TS: ipc wrappers for settings (incl. `settings_clear_tos_credentials`) / meetings / jobs / summary.
+- TS: ipc wrappers for settings (incl. `settings_clear_tos_credentials`, `settings_test_*`) / meetings / jobs / summary.
 
 ---
 

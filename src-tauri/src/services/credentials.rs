@@ -218,12 +218,10 @@ pub fn is_dashscope_configured() -> bool {
     matches!(dashscope_store::get(), Ok(Some(_)))
 }
 
-#[cfg_attr(not(test), allow(dead_code))]
 pub fn get_credentials() -> CmdResult<Option<DoubaoCredentials>> {
     doubao_store::get()
 }
 
-#[cfg_attr(not(test), allow(dead_code))]
 pub fn get_dashscope_credentials() -> CmdResult<Option<DashScopeCredentials>> {
     dashscope_store::get()
 }
@@ -378,7 +376,6 @@ pub fn is_tos_secrets_configured() -> bool {
     matches!(tos_store::get(), Ok(Some(_)))
 }
 
-#[cfg_attr(not(test), allow(dead_code))]
 pub fn get_tos_credentials() -> CmdResult<Option<TosCredentials>> {
     tos_store::get()
 }

@@ -1,8 +1,9 @@
-//! Volcengine TOS object storage — put, pre-signed GET, delete.
+//! Volcengine TOS object storage — put, pre-signed GET, delete, head_bucket.
 
 use std::path::Path;
 
 use ve_tos_rust_sdk::auth::{PreSignedURLInput, SignerAPI};
+use ve_tos_rust_sdk::bucket::{BucketAPI, HeadBucketInput};
 use ve_tos_rust_sdk::enumeration::HttpMethodType::HttpMethodGet;
 use ve_tos_rust_sdk::object::{DeleteObjectInput, ObjectAPI, PutObjectFromFileInput};
 use ve_tos_rust_sdk::tos::{self, TosClient};
@@ -12,6 +13,10 @@ use crate::services::credentials::TosCredentials;
 
 /// Pre-signed GET TTL — must outlive the 45 minute ASR poll window.
 pub const PRESIGN_TTL_SECS: i64 = 2 * 60 * 60;
+
+/// Short timeouts for credentials connectivity probes (not large uploads).
+const TEST_CONNECTION_TIMEOUT_MS: isize = 20_000;
+const TEST_REQUEST_TIMEOUT_MS: isize = 30_000;
 
 /// Resolved TOS connection parameters (secrets + non-secrets).
 #[derive(Debug, Clone)]
@@ -98,11 +103,35 @@ fn build_client(config: &TosConfig) -> CmdResult<impl TosClient> {
         .map_err(map_tos_err)
 }
 
+fn build_test_client(config: &TosConfig) -> CmdResult<impl TosClient> {
+    tos::builder()
+        .ak(config.credentials.access_key_id.clone())
+        .sk(config.credentials.secret_access_key.clone())
+        .region(config.region.clone())
+        .endpoint(config.endpoint.clone())
+        .connection_timeout(TEST_CONNECTION_TIMEOUT_MS)
+        .request_timeout(TEST_REQUEST_TIMEOUT_MS)
+        .max_retry_count(1)
+        .build()
+        .map_err(map_tos_err)
+}
+
 pub struct HttpTosClient;
 
 impl HttpTosClient {
     pub fn new() -> Self {
         Self
+    }
+
+    /// Connectivity probe: HeadBucket with short timeouts. Does not upload objects.
+    pub fn head_bucket(&self, config: &TosConfig) -> CmdResult<()> {
+        let client = build_test_client(config)?;
+        let input = HeadBucketInput::new(&config.bucket);
+        client.head_bucket(&input).map_err(|_| {
+            // Never forward SDK Display (may include URLs/paths/secrets).
+            AppErrorDto::tos_upload_error("TOS 连接失败，请检查密钥、Region 与 Bucket")
+        })?;
+        Ok(())
     }
 }
 
