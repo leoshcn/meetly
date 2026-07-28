@@ -211,3 +211,36 @@ Shipped ConfirmDialog, settings tabs, credential masks, and wide/narrow workspac
 ### Next Steps
 
 - None - task complete
+
+
+## Session 7: Packaging dual builds and GitHub Release
+
+**Date**: 2026-07-28
+**Task**: Packaging dual builds and GitHub Release
+**Branch**: `main`
+
+### Summary
+
+Implemented Windows NSIS lean+offline dual installers with pinned FFmpeg cache/prepare scripts, bundled path resolve, and GitHub Actions Release workflow; documented GitHub setup for beginners.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f7378c4` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
