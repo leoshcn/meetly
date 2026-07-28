@@ -277,3 +277,37 @@ Shipped Meetly dark display mode (system/light/dark via Settings Appearance) and
 ### Next Steps
 
 - None - task complete
+
+
+## Session 9: 版本发现与升级
+
+**Date**: 2026-07-29
+**Task**: 版本发现与升级
+**Branch**: `main`
+
+### Summary
+
+Shipped Meetly 0.3.0 Tauri updater (lean channel, About/banner UX, busy-safe install), Release CI signing/latest.json, clearer check-update errors; pushed v0.3.0.
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `44f9419` | (see git log) |
+| `f7ea781` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
