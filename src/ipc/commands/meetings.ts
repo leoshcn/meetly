@@ -1,8 +1,22 @@
 import { invokeCommand } from "../client";
 import type { Meeting, Transcript } from "../types";
 
+export function meetingsCreate(): Promise<Meeting> {
+  return invokeCommand<Meeting>("meetings_create");
+}
+
 export function meetingsCreateFromFile(path: string): Promise<Meeting> {
   return invokeCommand<Meeting>("meetings_create_from_file", { path });
+}
+
+export function meetingsAttachSource(
+  meetingId: string,
+  path: string,
+): Promise<Meeting> {
+  return invokeCommand<Meeting>("meetings_attach_source", {
+    meeting_id: meetingId,
+    path,
+  });
 }
 
 export function meetingsList(): Promise<Meeting[]> {

@@ -1,7 +1,10 @@
 use rusqlite::Connection;
 
 use crate::error::{AppErrorDto, CmdResult};
-use crate::models::{Settings, SettingsUpdate};
+use crate::models::{
+    Settings, SettingsUpdate, THEME_PREFERENCE_DARK, THEME_PREFERENCE_LIGHT,
+    THEME_PREFERENCE_SYSTEM,
+};
 use crate::services::credentials;
 
 /// Max length of a single hotword (characters).
@@ -55,10 +58,25 @@ pub fn is_tos_configured(conn: &Connection) -> bool {
     }
 }
 
+/// Validate theme_preference without writing. Unknown values → SETTINGS_INVALID.
+pub fn validate_theme_preference(raw: &str) -> CmdResult<String> {
+    let trimmed = raw.trim();
+    match trimmed {
+        THEME_PREFERENCE_SYSTEM | THEME_PREFERENCE_LIGHT | THEME_PREFERENCE_DARK => {
+            Ok(trimmed.to_string())
+        }
+        _ => Err(AppErrorDto::with_details(
+            "SETTINGS_INVALID",
+            "theme_preference must be system, light, or dark",
+            serde_json::json!({ "field": "theme_preference" }),
+        )),
+    }
+}
+
 pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
     let mut stmt = conn
         .prepare(
-            "SELECT hotwords, context_text, tos_region, tos_bucket, tos_endpoint, recording_dir
+            "SELECT hotwords, context_text, tos_region, tos_bucket, tos_endpoint, recording_dir, theme_preference
              FROM settings WHERE id = 1",
         )
         .map_err(AppErrorDto::from)?;
@@ -70,6 +88,7 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
         let tos_bucket: String = row.get(3)?;
         let tos_endpoint: String = row.get(4)?;
         let recording_dir: String = row.get(5)?;
+        let theme_preference: String = row.get(6)?;
         Ok((
             hotwords_json,
             context_text,
@@ -77,6 +96,7 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
             tos_bucket,
             tos_endpoint,
             recording_dir,
+            theme_preference,
         ))
     });
 
@@ -88,9 +108,12 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
             tos_bucket,
             tos_endpoint,
             recording_dir,
+            theme_preference,
         )) => {
             let hotwords: Vec<String> =
                 serde_json::from_str(&hotwords_json).map_err(AppErrorDto::from)?;
+            let theme_preference = validate_theme_preference(&theme_preference)
+                .unwrap_or_else(|_| THEME_PREFERENCE_SYSTEM.to_string());
             Ok(with_configured(Settings {
                 hotwords,
                 context_text,
@@ -102,6 +125,7 @@ pub fn get_settings(conn: &Connection) -> CmdResult<Settings> {
                 tos_endpoint,
                 recording_dir,
                 recording_dir_resolved: String::new(),
+                theme_preference,
             }))
         }
         Err(rusqlite::Error::QueryReturnedNoRows) => Ok(with_configured(Settings::default())),
@@ -169,22 +193,24 @@ fn apply_credential_update(update: &SettingsUpdate) -> CmdResult<()> {
 fn persist_settings_row(conn: &Connection, settings: &Settings) -> CmdResult<()> {
     let hotwords_json = serde_json::to_string(&settings.hotwords).map_err(AppErrorDto::from)?;
     conn.execute(
-        "INSERT INTO settings (id, hotwords, context_text, tos_region, tos_bucket, tos_endpoint, recording_dir)
-         VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6)
+        "INSERT INTO settings (id, hotwords, context_text, tos_region, tos_bucket, tos_endpoint, recording_dir, theme_preference)
+         VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6, ?7)
          ON CONFLICT(id) DO UPDATE SET
            hotwords = excluded.hotwords,
            context_text = excluded.context_text,
            tos_region = excluded.tos_region,
            tos_bucket = excluded.tos_bucket,
            tos_endpoint = excluded.tos_endpoint,
-           recording_dir = excluded.recording_dir",
+           recording_dir = excluded.recording_dir,
+           theme_preference = excluded.theme_preference",
         rusqlite::params![
             hotwords_json,
             settings.context_text,
             settings.tos_region,
             settings.tos_bucket,
             settings.tos_endpoint,
-            settings.recording_dir
+            settings.recording_dir,
+            settings.theme_preference
         ],
     )
     .map_err(AppErrorDto::from)?;
@@ -201,6 +227,11 @@ pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<S
         Some(crate::services::recording_service::validate_recording_dir_override(
             raw,
         )?)
+    } else {
+        None
+    };
+    let theme_preference_validated = if let Some(ref raw) = update.theme_preference {
+        Some(validate_theme_preference(raw)?)
     } else {
         None
     };
@@ -231,6 +262,9 @@ pub fn update_settings(conn: &Connection, update: SettingsUpdate) -> CmdResult<S
     }
     if let Some(recording_dir) = recording_dir_validated {
         current.recording_dir = recording_dir;
+    }
+    if let Some(theme_preference) = theme_preference_validated {
+        current.theme_preference = theme_preference;
     }
 
     persist_settings_row(conn, &current)?;
@@ -276,6 +310,7 @@ mod tests {
         assert_eq!(settings.tos_region, "");
         assert_eq!(settings.tos_bucket, "");
         assert_eq!(settings.recording_dir, "");
+        assert_eq!(settings.theme_preference, THEME_PREFERENCE_SYSTEM);
         assert!(
             settings
                 .recording_dir_resolved
@@ -521,5 +556,47 @@ mod tests {
         )
         .expect_err("relative");
         assert_eq!(err.code, "SETTINGS_INVALID");
+    }
+
+    #[test]
+    fn theme_preference_persists_and_rejects_invalid() {
+        reset_for_test();
+        let conn = crate::db::pool::open_memory().expect("memory db");
+
+        let updated = update_settings(
+            &conn,
+            SettingsUpdate {
+                theme_preference: Some(THEME_PREFERENCE_DARK.into()),
+                ..Default::default()
+            },
+        )
+        .expect("update dark");
+        assert_eq!(updated.theme_preference, THEME_PREFERENCE_DARK);
+
+        let loaded = get_settings(&conn).expect("reload");
+        assert_eq!(loaded.theme_preference, THEME_PREFERENCE_DARK);
+
+        let light = update_settings(
+            &conn,
+            SettingsUpdate {
+                theme_preference: Some(THEME_PREFERENCE_LIGHT.into()),
+                ..Default::default()
+            },
+        )
+        .expect("update light");
+        assert_eq!(light.theme_preference, THEME_PREFERENCE_LIGHT);
+
+        let err = update_settings(
+            &conn,
+            SettingsUpdate {
+                theme_preference: Some("sepia".into()),
+                ..Default::default()
+            },
+        )
+        .expect_err("invalid");
+        assert_eq!(err.code, "SETTINGS_INVALID");
+
+        let still = get_settings(&conn).expect("unchanged");
+        assert_eq!(still.theme_preference, THEME_PREFERENCE_LIGHT);
     }
 }

@@ -25,7 +25,9 @@ Applies when adding or changing any `#[tauri::command]`, frontend `invoke` wrapp
 | `settings_test_doubao` | optional `{ doubao_app_id?, doubao_access_token? }` | `{ ok: true }` | same — merges overrides with keyring; **does not persist** |
 | `settings_test_tos` | optional `{ tos_access_key_id?, tos_secret_access_key?, tos_region?, tos_bucket?, tos_endpoint? }` | `{ ok: true }` | same — merges with keyring/SQLite; HeadBucket probe; **does not persist** |
 | `settings_test_dashscope` | optional `{ dashscope_api_key? }` | `{ ok: true }` | same — merges with keyring; GET `/compatible-mode/v1/models`; **does not persist** |
+| `meetings_create` | (none) | `Meeting` (draft: `title` =「未命名项目」, `source_path` = `""`) | `src-tauri/src/commands/meetings.rs` |
 | `meetings_create_from_file` | `{ path: string }` | `Meeting` | `src-tauri/src/commands/meetings.rs` |
+| `meetings_attach_source` | `{ meeting_id: string, path: string }` | `Meeting` — only when draft (`source_path` empty); keeps custom title, else file stem | same |
 | `meetings_list` | (none) | `Meeting[]` (created_at DESC) | same |
 | `meetings_get` | `{ meeting_id: string }` | `Meeting` | same |
 | `meetings_rename` | `{ meeting_id: string, title: string }` | `Meeting` | same |
@@ -64,6 +66,8 @@ type Settings = {
   recording_dir: string;
   /** Effective path after resolving empty default. */
   recording_dir_resolved: string;
+  /** UI theme preference: `system` | `light` | `dark`. */
+  theme_preference: string;
 };
 type SettingsUpdate = {
   hotwords?: string[];
@@ -83,6 +87,8 @@ type SettingsUpdate = {
   tos_endpoint?: string;
   /** Absolute path or empty to reset default. */
   recording_dir?: string;
+  /** UI theme preference: `system` | `light` | `dark`. */
+  theme_preference?: string;
 };
 /** Optional write-only overrides for settings_test_*; empty/omit → use saved. Never persisted by test commands. */
 type SettingsTestDoubaoOverrides = {
@@ -187,6 +193,7 @@ Path selection at `jobs_start_transcription` / execute:
 | > 512 MiB | `ASR_PAYLOAD_TOO_LARGE` |
 
 `meetings_create_from_file` rejects only **> 512 MiB** so large files can be stored; path selection happens at transcription start.
+`meetings_create` inserts a draft (`source_path` empty, title「未命名项目」). `meetings_attach_source` binds a file to a draft only; rejects if `source_path` already set (`INVALID_ARGUMENT`).
 
 Async poll window: **45 minutes** client-side (`ASR_TIMEOUT` on exceed). Pre-signed URL TTL ≥ poll window (2 h).
 
@@ -201,6 +208,7 @@ Async poll window: **45 minutes** client-side (`ASR_TIMEOUT` on exceed). Pre-sig
 | Missing Doubao credentials | `ASR_NOT_CONFIGURED` | No provider call |
 | Incomplete Doubao/TOS merge for test | `SETTINGS_INVALID` | Inline on credentials test |
 | Audio file > 512 MiB | `ASR_PAYLOAD_TOO_LARGE` | Reject before create / start |
+| Attach source to non-draft meeting | `INVALID_ARGUMENT` | `meetings_attach_source` no-op |
 | > 20 MiB without complete TOS config | `TOS_NOT_CONFIGURED` | Fail fast; no job success |
 | TOS put / pre-sign failure | `TOS_UPLOAD_ERROR` | Job → `failed` (if already started) |
 | Cannot read audio file | `IO_ERROR` | Safe message |

@@ -1,6 +1,7 @@
 export { invokeCommand, normalizeError, isAppError } from "./client";
 export type { AppError } from "./client";
 export type {
+  ThemePreference,
   Settings,
   SettingsUpdate,
   SettingsTestDoubaoOverrides,
@@ -34,7 +35,9 @@ export {
   settingsTestDashscope,
 } from "./commands/settings";
 export {
+  meetingsCreate,
   meetingsCreateFromFile,
+  meetingsAttachSource,
   meetingsList,
   meetingsGet,
   meetingsRename,

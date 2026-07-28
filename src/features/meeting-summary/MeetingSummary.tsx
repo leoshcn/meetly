@@ -50,14 +50,53 @@ function sectionLabelsFor(language: string): SectionLabels {
   }
 }
 
+/** Split a zh-en list item into Chinese + English paragraphs for display/copy. */
+export function bilingualParagraphs(item: string): string[] {
+  const trimmed = item.trim();
+  if (!trimmed) {
+    return [];
+  }
+  const blankSplit = trimmed
+    .split(/\n\s*\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (blankSplit.length >= 2) {
+    return blankSplit;
+  }
+  // Legacy inline form: 「中文 / English」
+  const slash = trimmed.match(/^(.*?)\s+\/\s+(.+)$/s);
+  if (slash) {
+    return [slash[1].trim(), slash[2].trim()].filter(Boolean);
+  }
+  const lineSplit = trimmed
+    .split("\n")
+    .map((p) => p.trim())
+    .filter(Boolean);
+  return lineSplit.length >= 2 ? lineSplit : [trimmed];
+}
+
+function formatListItem(item: string, language: string): string {
+  if (language !== "zh-en") {
+    return `- ${item}`;
+  }
+  const parts = bilingualParagraphs(item);
+  if (parts.length <= 1) {
+    return `- ${parts[0] ?? item}`;
+  }
+  const [zh, ...rest] = parts;
+  return [`- ${zh}`, ...rest.map((p) => `  ${p}`)].join("\n");
+}
+
 function SummaryBlock({
   title,
   items,
   emptyLabel,
+  bilingual,
 }: {
   title: string;
   items: string[];
   emptyLabel: string;
+  bilingual?: boolean;
 }) {
   return (
     <div className={styles.block}>
@@ -66,9 +105,23 @@ function SummaryBlock({
         <p className={styles.empty}>{emptyLabel}</p>
       ) : (
         <ul>
-          {items.map((item, index) => (
-            <li key={`${title}-${index}`}>{item}</li>
-          ))}
+          {items.map((item, index) => {
+            const parts = bilingual ? bilingualParagraphs(item) : [item];
+            return (
+              <li key={`${title}-${index}`} className={styles.item}>
+                {parts.map((part, partIndex) => (
+                  <p
+                    key={`${title}-${index}-${partIndex}`}
+                    className={
+                      partIndex === 0 ? styles.itemPrimary : styles.itemSecondary
+                    }
+                  >
+                    {part}
+                  </p>
+                ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
@@ -81,7 +134,9 @@ function formatSummaryText(summary: Summary): string {
     const body =
       items.length === 0
         ? labels.empty
-        : items.map((item) => `- ${item}`).join("\n");
+        : items
+            .map((item) => formatListItem(item, summary.language))
+            .join("\n\n");
     return `## ${title}\n\n${body}`;
   };
   return [
@@ -222,16 +277,19 @@ export function MeetingSummaryPanel({
             title={labels.keyPoints}
             items={summary.key_points}
             emptyLabel={labels.empty}
+            bilingual={summary.language === "zh-en"}
           />
           <SummaryBlock
             title={labels.actionItems}
             items={summary.action_items}
             emptyLabel={labels.empty}
+            bilingual={summary.language === "zh-en"}
           />
           <SummaryBlock
             title={labels.decisions}
             items={summary.decisions}
             emptyLabel={labels.empty}
+            bilingual={summary.language === "zh-en"}
           />
         </div>
       )}

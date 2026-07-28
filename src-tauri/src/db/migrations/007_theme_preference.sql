@@ -1,0 +1,2 @@
+-- theme_preference column on settings.
+-- Placeholder so migration numbering is visible in tree; see ensure_theme_preference_column.

@@ -1,6 +1,6 @@
 [package]
 name = "meetly"
-version = "0.1.0"
+version = "0.2.0"
 description = "Meetly desktop meeting assistant"
 authors = ["Meetly"]
 edition = "2021"

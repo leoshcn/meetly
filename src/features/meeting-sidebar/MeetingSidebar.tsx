@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  meetingsCreate,
   meetingsDelete,
   meetingsList,
   meetingsRename,
@@ -22,7 +23,7 @@ type Props = {
   collapsed: boolean;
   onToggleCollapsed: () => void;
   onSelect: (meetingId: string, meeting?: Meeting) => void;
-  onNewProject: () => void;
+  onNewProject: (meeting: Meeting) => void;
   onDeleted: (meetingId: string) => void;
   onRenamed: (meeting: Meeting) => void;
 };
@@ -75,6 +76,20 @@ export function MeetingSidebar({
     void load();
   }, [load, refreshKey]);
 
+  async function handleNewProject() {
+    try {
+      const created = await meetingsCreate();
+      setError(null);
+      setErrorCode(undefined);
+      onNewProject(created);
+      await load();
+    } catch (err) {
+      const appErr = err as AppError;
+      setError(friendlyErrorMessage(appErr));
+      setErrorCode(errorTitle(appErr));
+    }
+  }
+
   async function commitRename(meetingId: string) {
     const title = editTitle.trim();
     if (!title) {
@@ -118,7 +133,7 @@ export function MeetingSidebar({
         <button
           type="button"
           className={styles.iconRail}
-          onClick={onNewProject}
+          onClick={() => void handleNewProject()}
           aria-label="新建项目"
           title="新建项目"
         >
@@ -155,7 +170,7 @@ export function MeetingSidebar({
         </button>
       </div>
       <div className={styles.toolbar}>
-        <Button variant="primary" block onClick={onNewProject}>
+        <Button variant="primary" block onClick={() => void handleNewProject()}>
           新建项目
         </Button>
       </div>
@@ -167,7 +182,7 @@ export function MeetingSidebar({
       <ul className={styles.list}>
         {meetings.length === 0 ? (
           <li className={styles.empty}>
-            暂无项目。点击上方「新建项目」开始录音或导入音频。
+            暂无项目。点击上方「新建项目」创建项目后开始录音或导入音频。
           </li>
         ) : (
           meetings.map((meeting) => {

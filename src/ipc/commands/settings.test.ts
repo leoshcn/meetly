@@ -22,6 +22,7 @@ const emptySettings = {
   tos_endpoint: "",
   recording_dir: "",
   recording_dir_resolved: "C:\\Users\\test\\Documents\\Meetly\\Recordings",
+  theme_preference: "system" as const,
 };
 
 describe("settings commands", () => {

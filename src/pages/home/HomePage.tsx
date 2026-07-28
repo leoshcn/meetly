@@ -145,6 +145,7 @@ export function HomePage({
 }: Props) {
   const [activeMeetingId, setActiveMeetingId] = useState<string | null>(null);
   const [activeTitle, setActiveTitle] = useState<string | null>(null);
+  const [activeSourcePath, setActiveSourcePath] = useState("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [listRefreshKey, setListRefreshKey] = useState(0);
   const [summaryEpoch, setSummaryEpoch] = useState(0);
@@ -174,7 +175,9 @@ export function HomePage({
     wasTranscribing.current = transcribing;
   }, [transcribing, hasTranscript]);
 
-  const showWorkspace = activeMeetingId !== null;
+  const isDraft =
+    activeMeetingId !== null && activeSourcePath.trim().length === 0;
+  const showWorkspace = activeMeetingId !== null && !isDraft;
 
   function resetWorkspaceTab(nextTranscribing: boolean) {
     setWorkspaceTab(defaultWorkspaceTab(nextTranscribing));
@@ -183,6 +186,7 @@ export function HomePage({
   function handleMeetingCreated(meeting: Meeting, jobId?: string) {
     setActiveMeetingId(meeting.id);
     setActiveTitle(meeting.title);
+    setActiveSourcePath(meeting.source_path);
     setHasTranscript(false);
     setBootstrapJobId(jobId ?? null);
     resetWorkspaceTab(Boolean(jobId) || transcribing);
@@ -194,6 +198,7 @@ export function HomePage({
     workspaceBody = (
       <div className={styles.stageBody}>
         <MeetingRecordingPanel
+          draftMeetingId={isDraft ? activeMeetingId : null}
           onOpenSettings={onOpenSettings}
           onMeetingCreated={handleMeetingCreated}
           onBusyChange={setTranscribing}
@@ -284,21 +289,25 @@ export function HomePage({
         onSelect={(id, meeting) => {
           setActiveMeetingId(id);
           setActiveTitle(meeting?.title ?? null);
+          setActiveSourcePath(meeting?.source_path ?? "");
           setHasTranscript(false);
           setBootstrapJobId(null);
           resetWorkspaceTab(false);
         }}
-        onNewProject={() => {
-          setActiveMeetingId(null);
-          setActiveTitle(null);
+        onNewProject={(meeting) => {
+          setActiveMeetingId(meeting.id);
+          setActiveTitle(meeting.title);
+          setActiveSourcePath(meeting.source_path);
           setHasTranscript(false);
           setTranscribing(false);
           setBootstrapJobId(null);
+          resetWorkspaceTab(false);
         }}
         onDeleted={(id) => {
           if (activeMeetingId === id) {
             setActiveMeetingId(null);
             setActiveTitle(null);
+            setActiveSourcePath("");
             setHasTranscript(false);
             setTranscribing(false);
           }
@@ -307,6 +316,7 @@ export function HomePage({
         onRenamed={(meeting) => {
           if (meeting.id === activeMeetingId) {
             setActiveTitle(meeting.title);
+            setActiveSourcePath(meeting.source_path);
           }
           bumpList();
         }}

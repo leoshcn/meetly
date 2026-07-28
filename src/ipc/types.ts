@@ -1,3 +1,5 @@
+export type ThemePreference = "system" | "light" | "dark";
+
 export type Settings = {
   hotwords: string[];
   context_text: string;
@@ -11,6 +13,8 @@ export type Settings = {
   recording_dir: string;
   /** Effective path after resolving the empty-default rule. */
   recording_dir_resolved: string;
+  /** UI theme: system | light | dark. */
+  theme_preference: ThemePreference;
 };
 
 export type SettingsUpdate = {
@@ -31,6 +35,7 @@ export type SettingsUpdate = {
   tos_endpoint?: string;
   /** Absolute path or empty string to reset to default. */
   recording_dir?: string;
+  theme_preference?: ThemePreference;
 };
 
 /** Optional write-only overrides for settings_test_doubao; empty/omit → use keyring. */

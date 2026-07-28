@@ -117,5 +117,5 @@ Tauri 2 · React 19 · TypeScript · Vite · SQLite · Doubao ASR · Qwen · OS 
 ---
 
 <p align="center">
-  <sub>UI previews in <code>docs/screenshots/</code> · v0.1.0</sub>
+  <sub>UI previews in <code>docs/screenshots/</code> · v0.2.0</sub>
 </p>

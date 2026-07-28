@@ -39,7 +39,10 @@ fn system_prompt_for_language(language: &str) -> &'static str {
         "zh-en" => concat!(
             "你是会议纪要助手。根据转写文本与可选上下文，输出中英文双语结构化摘要。",
             "必须返回一个 JSON 对象，字段为 key_points、action_items、decisions，",
-            "每个字段是字符串数组。每个字符串条目必须同时包含简体中文与英文，格式为「中文 / English」。",
+            "每个字段是字符串数组。",
+            "每个字符串条目必须同时包含简体中文与对应英文：先写完整中文段落，再换行空一行，",
+            "然后写对应的英文段落（英文须独立成段，不要写在同一行，也不要使用「中文 / English」斜杠并列）。",
+            "示例：\"讨论了发布节奏。\\n\\nDiscussed the release cadence.\"。",
             "某块没有内容时返回空数组。"
         ),
         _ => concat!(
@@ -58,6 +61,11 @@ fn user_prompt_for_language(language: &str, context_section: &str, transcript: &
              (translate from Chinese if needed).\n\n\
              [User context]\n{context_section}\n\n\
              [Meeting transcript]\n{transcript}"
+        ),
+        "zh-en" => format!(
+            "请根据以下材料生成摘要 JSON。\
+             每个条目先写完整中文段落，再空一行写对应英文段落；英文须独立成段，不要用「中文 / English」写在同一行。\n\n\
+             【用户上下文】\n{context_section}\n\n【会议转写】\n{transcript}"
         ),
         _ => format!(
             "请根据以下材料生成摘要 JSON。\n\n【用户上下文】\n{context_section}\n\n【会议转写】\n{transcript}"
@@ -305,11 +313,19 @@ mod tests {
         assert!(bi["messages"][0]["content"]
             .as_str()
             .unwrap()
-            .contains("中文 / English"));
+            .contains("独立成段"));
+        assert!(!bi["messages"][0]["content"]
+            .as_str()
+            .unwrap()
+            .contains("格式为「中文 / English」"));
         assert!(bi["messages"][1]["content"]
             .as_str()
             .unwrap()
             .contains("请根据以下材料"));
+        assert!(bi["messages"][1]["content"]
+            .as_str()
+            .unwrap()
+            .contains("空一行"));
     }
 
     #[test]

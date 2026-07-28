@@ -3,14 +3,16 @@ import { SettingsHotwordsPanel } from "../../features/settings-hotwords";
 import { SettingsCredentialsPanel } from "../../features/settings-credentials";
 import { SettingsRecordingPanel } from "../../features/settings-recording";
 import { SettingsFfmpegPanel } from "../../features/settings-ffmpeg";
+import { SettingsAppearancePanel } from "../../features/settings-appearance";
 import styles from "./SettingsPage.module.css";
 
-type SettingsTab = "credentials" | "transcription" | "recording";
+type SettingsTab = "credentials" | "transcription" | "recording" | "appearance";
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: "credentials", label: "凭证" },
   { id: "transcription", label: "转写与摘要" },
   { id: "recording", label: "录音与编码" },
+  { id: "appearance", label: "外观" },
 ];
 
 export function SettingsPage() {
@@ -59,6 +61,7 @@ export function SettingsPage() {
             <SettingsFfmpegPanel />
           </>
         )}
+        {tab === "appearance" && <SettingsAppearancePanel />}
       </div>
     </div>
   );

@@ -9,5 +9,8 @@ pub use job::{
 pub use meeting::{
     default_speaker_names, render_transcript_text, Meeting, Transcript, TranscriptSegment,
 };
-pub use settings::{Settings, SettingsUpdate};
+pub use settings::{
+    Settings, SettingsUpdate, THEME_PREFERENCE_DARK, THEME_PREFERENCE_LIGHT,
+    THEME_PREFERENCE_SYSTEM,
+};
 pub use summary::{is_supported_summary_language, Summary, SummaryContent};

@@ -51,8 +51,7 @@
 }
 
 .legendSys::before {
-  background: var(--ink);
-  opacity: 0.55;
+  background: var(--ink-muted);
 }
 
 @media (prefers-reduced-motion: reduce) {

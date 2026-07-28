@@ -18,7 +18,10 @@ pub const FLASH_MAX_AUDIO_BYTES: u64 = 20 * 1024 * 1024;
 /// Hard reject cap for import / async path (512 MiB).
 pub const ASYNC_MAX_AUDIO_BYTES: u64 = 512 * 1024 * 1024;
 
-pub fn create_from_file(conn: &Connection, path: &str) -> CmdResult<Meeting> {
+/// Default title for draft meetings created via「新建项目」.
+pub const DEFAULT_DRAFT_TITLE: &str = "未命名项目";
+
+fn validate_audio_path(path: &str) -> CmdResult<&Path> {
     let path = path.trim();
     if path.is_empty() {
         return Err(AppErrorDto::io_error("Audio path is empty"));
@@ -34,11 +37,43 @@ pub fn create_from_file(conn: &Connection, path: &str) -> CmdResult<Meeting> {
     if meta.len() > ASYNC_MAX_AUDIO_BYTES {
         return Err(AppErrorDto::asr_payload_too_large(ASYNC_MAX_AUDIO_BYTES));
     }
+    Ok(file_path)
+}
 
-    let title = file_path
+fn title_from_path(file_path: &Path) -> Option<String> {
+    file_path
         .file_stem()
         .and_then(|s| s.to_str())
-        .map(|s| s.to_string());
+        .map(|s| s.to_string())
+}
+
+/// Create a draft meeting with no audio yet (`source_path` empty).
+pub fn create_draft(conn: &Connection) -> CmdResult<Meeting> {
+    let meeting = Meeting {
+        id: Uuid::new_v4().to_string(),
+        source_path: String::new(),
+        title: Some(DEFAULT_DRAFT_TITLE.to_string()),
+        created_at: Utc::now().to_rfc3339(),
+    };
+
+    conn.execute(
+        "INSERT INTO meetings (id, source_path, title, created_at) VALUES (?1, ?2, ?3, ?4)",
+        rusqlite::params![
+            meeting.id,
+            meeting.source_path,
+            meeting.title,
+            meeting.created_at
+        ],
+    )
+    .map_err(AppErrorDto::from)?;
+
+    Ok(meeting)
+}
+
+pub fn create_from_file(conn: &Connection, path: &str) -> CmdResult<Meeting> {
+    let file_path = validate_audio_path(path)?;
+    let path = path.trim();
+    let title = title_from_path(file_path);
 
     let meeting = Meeting {
         id: Uuid::new_v4().to_string(),
@@ -59,6 +94,34 @@ pub fn create_from_file(conn: &Connection, path: &str) -> CmdResult<Meeting> {
     .map_err(AppErrorDto::from)?;
 
     Ok(meeting)
+}
+
+/// Attach an audio file to an existing draft (`source_path` must be empty).
+pub fn attach_source(conn: &Connection, meeting_id: &str, path: &str) -> CmdResult<Meeting> {
+    let file_path = validate_audio_path(path)?;
+    let path = path.trim();
+    let meeting = get_meeting(conn, meeting_id)?;
+    if !meeting.source_path.trim().is_empty() {
+        return Err(AppErrorDto::invalid_argument(
+            "Meeting already has a source file",
+        ));
+    }
+
+    let keep_title = meeting
+        .title
+        .as_deref()
+        .map(str::trim)
+        .filter(|t| !t.is_empty() && *t != DEFAULT_DRAFT_TITLE)
+        .map(|t| t.to_string());
+    let title = keep_title.or_else(|| title_from_path(file_path));
+
+    conn.execute(
+        "UPDATE meetings SET source_path = ?1, title = ?2 WHERE id = ?3",
+        rusqlite::params![path, title, meeting_id],
+    )
+    .map_err(AppErrorDto::from)?;
+
+    get_meeting(conn, meeting_id)
 }
 
 pub fn list_meetings(conn: &Connection) -> CmdResult<Vec<Meeting>> {
@@ -337,6 +400,52 @@ mod tests {
         let meeting = create_from_file(&conn, path.to_str().unwrap()).expect("create");
         let loaded = get_meeting(&conn, &meeting.id).expect("get");
         assert_eq!(loaded.id, meeting.id);
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn create_draft_and_attach_source() {
+        let conn = open_memory().expect("db");
+        let draft = create_draft(&conn).expect("draft");
+        assert_eq!(draft.title.as_deref(), Some(DEFAULT_DRAFT_TITLE));
+        assert!(draft.source_path.is_empty());
+
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("meetly-attach-{}.wav", Uuid::new_v4()));
+        {
+            let mut f = fs::File::create(&path).expect("create");
+            f.write_all(b"RIFF").expect("write");
+        }
+        let attached =
+            attach_source(&conn, &draft.id, path.to_str().unwrap()).expect("attach");
+        assert_eq!(attached.id, draft.id);
+        assert_eq!(attached.source_path, path.to_str().unwrap());
+        assert_eq!(
+            attached.title.as_deref(),
+            path.file_stem().and_then(|s| s.to_str())
+        );
+
+        let err = attach_source(&conn, &draft.id, path.to_str().unwrap())
+            .expect_err("second attach");
+        assert_eq!(err.code, "INVALID_ARGUMENT");
+        let _ = fs::remove_file(&path);
+    }
+
+    #[test]
+    fn attach_source_keeps_renamed_title() {
+        let conn = open_memory().expect("db");
+        let draft = create_draft(&conn).expect("draft");
+        rename_meeting(&conn, &draft.id, "周会").unwrap();
+
+        let dir = std::env::temp_dir();
+        let path = dir.join(format!("meetly-keep-title-{}.wav", Uuid::new_v4()));
+        {
+            let mut f = fs::File::create(&path).expect("create");
+            f.write_all(b"RIFF").expect("write");
+        }
+        let attached =
+            attach_source(&conn, &draft.id, path.to_str().unwrap()).expect("attach");
+        assert_eq!(attached.title.as_deref(), Some("周会"));
         let _ = fs::remove_file(&path);
     }
 

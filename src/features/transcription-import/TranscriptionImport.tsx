@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { useTheme } from "../../app/ThemeProvider";
 import {
   jobsGet,
   jobsStartTranscription,
@@ -18,7 +19,7 @@ import styles from "./TranscriptionImport.module.css";
 
 const POLL_MS = 1000;
 
-const SPEAKER_COLORS = [
+const SPEAKER_COLORS_LIGHT = [
   "#1F5C57",
   "#3D5A80",
   "#8B5E3C",
@@ -26,6 +27,30 @@ const SPEAKER_COLORS = [
   "#2F6B3A",
   "#A65D3F",
 ];
+
+/** Brighter palette for dark paper — ≥3:1 vs typical panel/paper. */
+const SPEAKER_COLORS_DARK = [
+  "#5FB8AE",
+  "#7FA8D4",
+  "#D4A574",
+  "#B39BD4",
+  "#7DBA88",
+  "#E09A6E",
+];
+
+function speakerColors(theme: "light" | "dark"): string[] {
+  return theme === "dark" ? SPEAKER_COLORS_DARK : SPEAKER_COLORS_LIGHT;
+}
+
+function speakerColor(
+  speakerId: string,
+  orderedIds: string[],
+  theme: "light" | "dark",
+): string {
+  const index = Math.max(0, orderedIds.indexOf(speakerId));
+  const palette = speakerColors(theme);
+  return palette[index % palette.length];
+}
 
 type Props = {
   meetingId: string | null;
@@ -54,11 +79,6 @@ function uniqueSpeakerIds(transcript: Transcript): string[] {
   return ids;
 }
 
-function speakerColor(speakerId: string, orderedIds: string[]): string {
-  const index = Math.max(0, orderedIds.indexOf(speakerId));
-  return SPEAKER_COLORS[index % SPEAKER_COLORS.length];
-}
-
 function fileNameFromPath(path: string): string {
   const parts = path.split(/[/\\]/);
   return parts[parts.length - 1] || path;
@@ -77,6 +97,7 @@ export function TranscriptionImportPanel({
   onTitleResolved,
   onReset,
 }: Props) {
+  const { resolved: resolvedTheme } = useTheme();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [job, setJob] = useState<Job | null>(null);
   const [transcript, setTranscript] = useState<Transcript | null>(null);
@@ -392,7 +413,7 @@ export function TranscriptionImportPanel({
                   <label key={id} className={styles.speakerRow}>
                     <span
                       className={styles.speakerSwatch}
-                      style={{ background: speakerColor(id, speakerIds) }}
+                      style={{ background: speakerColor(id, speakerIds, resolvedTheme) }}
                       aria-hidden
                     />
                     <span className={styles.speakerId}>ID {id}</span>
@@ -422,7 +443,7 @@ export function TranscriptionImportPanel({
                   nameDraft[seg.speaker_id] ||
                   transcript.speaker_names[seg.speaker_id] ||
                   `发言人 ${seg.speaker_id}`;
-                const color = speakerColor(seg.speaker_id, speakerIds);
+                const color = speakerColor(seg.speaker_id, speakerIds, resolvedTheme);
                 return (
                   <article
                     key={`${seg.speaker_id}-${index}`}

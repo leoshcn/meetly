@@ -23,6 +23,7 @@ src/
 │   ├── settings-credentials/
 │   ├── settings-recording/
 │   ├── settings-ffmpeg/
+│   ├── settings-appearance/
 │   ├── meeting-recording/
 │   ├── transcription-import/
 │   ├── meeting-summary/

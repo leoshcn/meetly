@@ -9,6 +9,15 @@ use crate::AppState;
 
 /// `rename_all = "snake_case"` keeps IPC args aligned with api-shape.md / `src/ipc`.
 #[tauri::command(rename_all = "snake_case")]
+pub fn meetings_create(state: State<'_, AppState>) -> CmdResult<Meeting> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    meeting_service::create_draft(&conn)
+}
+
+#[tauri::command(rename_all = "snake_case")]
 pub fn meetings_create_from_file(
     state: State<'_, AppState>,
     path: String,
@@ -18,6 +27,19 @@ pub fn meetings_create_from_file(
         .lock()
         .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
     meeting_service::create_from_file(&conn, &path)
+}
+
+#[tauri::command(rename_all = "snake_case")]
+pub fn meetings_attach_source(
+    state: State<'_, AppState>,
+    meeting_id: String,
+    path: String,
+) -> CmdResult<Meeting> {
+    let conn = state
+        .db
+        .lock()
+        .map_err(|_| crate::error::AppErrorDto::internal("Database lock poisoned"))?;
+    meeting_service::attach_source(&conn, &meeting_id, &path)
 }
 
 #[tauri::command(rename_all = "snake_case")]

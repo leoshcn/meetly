@@ -1,0 +1,1 @@
+export { SettingsAppearancePanel } from "./SettingsAppearance";

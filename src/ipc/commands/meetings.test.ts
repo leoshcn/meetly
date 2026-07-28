@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { __setInvokeForTests } from "../client";
 import {
+  meetingsAttachSource,
+  meetingsCreate,
   meetingsCreateFromFile,
   meetingsDelete,
   meetingsGet,
@@ -15,6 +17,18 @@ describe("meetings commands", () => {
     __setInvokeForTests(null);
   });
 
+  it("meetingsCreate invokes meetings_create", async () => {
+    const invoke = vi.fn().mockResolvedValue({
+      id: "m0",
+      source_path: "",
+      title: "未命名项目",
+      created_at: "t",
+    });
+    __setInvokeForTests(invoke);
+    await meetingsCreate();
+    expect(invoke).toHaveBeenCalledWith("meetings_create", undefined);
+  });
+
   it("meetingsCreateFromFile passes path", async () => {
     const invoke = vi.fn().mockResolvedValue({
       id: "m1",
@@ -25,6 +39,21 @@ describe("meetings commands", () => {
     __setInvokeForTests(invoke);
     await meetingsCreateFromFile("/a.wav");
     expect(invoke).toHaveBeenCalledWith("meetings_create_from_file", {
+      path: "/a.wav",
+    });
+  });
+
+  it("meetingsAttachSource passes meeting_id and path", async () => {
+    const invoke = vi.fn().mockResolvedValue({
+      id: "m1",
+      source_path: "/a.wav",
+      title: "a",
+      created_at: "t",
+    });
+    __setInvokeForTests(invoke);
+    await meetingsAttachSource("m1", "/a.wav");
+    expect(invoke).toHaveBeenCalledWith("meetings_attach_source", {
+      meeting_id: "m1",
       path: "/a.wav",
     });
   });

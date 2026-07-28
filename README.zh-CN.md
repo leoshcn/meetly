@@ -115,5 +115,5 @@ Tauri 2 · React 19 · TypeScript · Vite · SQLite · 豆包语音 · 通义千
 ---
 
 <p align="center">
-  <sub>界面预览见 <code>docs/screenshots/</code> · v0.1.0</sub>
+  <sub>界面预览见 <code>docs/screenshots/</code> · v0.2.0</sub>
 </p>

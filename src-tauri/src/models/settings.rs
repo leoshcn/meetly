@@ -1,6 +1,11 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+/// Allowed `theme_preference` values persisted in Settings.
+pub const THEME_PREFERENCE_SYSTEM: &str = "system";
+pub const THEME_PREFERENCE_LIGHT: &str = "light";
+pub const THEME_PREFERENCE_DARK: &str = "dark";
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Settings {
     pub hotwords: Vec<String>,
     pub context_text: String,
@@ -23,6 +28,26 @@ pub struct Settings {
     pub recording_dir: String,
     /// Effective recording directory after resolving the empty-default rule.
     pub recording_dir_resolved: String,
+    /// UI theme preference: `system` | `light` | `dark`.
+    pub theme_preference: String,
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            hotwords: Vec::new(),
+            context_text: String::new(),
+            doubao_configured: false,
+            dashscope_configured: false,
+            tos_configured: false,
+            tos_region: String::new(),
+            tos_bucket: String::new(),
+            tos_endpoint: String::new(),
+            recording_dir: String::new(),
+            recording_dir_resolved: String::new(),
+            theme_preference: THEME_PREFERENCE_SYSTEM.to_string(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -47,4 +72,6 @@ pub struct SettingsUpdate {
     pub tos_endpoint: Option<String>,
     /// Recording output directory override; empty string resets to default.
     pub recording_dir: Option<String>,
+    /// UI theme preference: `system` | `light` | `dark`.
+    pub theme_preference: Option<String>,
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import {
   jobsStartTranscription,
+  meetingsAttachSource,
   meetingsCreateFromFile,
   recordListInputDevices,
   recordStart,
@@ -16,6 +17,8 @@ import { RecordingWaveform } from "./RecordingWaveform";
 import styles from "./MeetingRecording.module.css";
 
 type Props = {
+  /** When set, attach audio to this draft instead of creating a new meeting. */
+  draftMeetingId?: string | null;
   onOpenSettings?: () => void;
   onMeetingCreated?: (meeting: Meeting, jobId?: string) => void;
   onBusyChange?: (busy: boolean) => void;
@@ -31,6 +34,7 @@ function formatElapsed(ms: number): string {
 }
 
 export function MeetingRecordingPanel({
+  draftMeetingId = null,
   onOpenSettings,
   onMeetingCreated,
   onBusyChange,
@@ -102,6 +106,13 @@ export function MeetingRecordingPanel({
     }, 250);
   }
 
+  async function resolveMeetingFromPath(path: string): Promise<Meeting> {
+    if (draftMeetingId) {
+      return meetingsAttachSource(draftMeetingId, path);
+    }
+    return meetingsCreateFromFile(path);
+  }
+
   async function beginRecording() {
     setError(null);
     setErrorCode(undefined);
@@ -132,7 +143,7 @@ export function MeetingRecordingPanel({
       setRecording(false);
       setDeviceName(null);
       setOutputDeviceName(null);
-      const created = await meetingsCreateFromFile(stopped.path);
+      const created = await resolveMeetingFromPath(stopped.path);
       onTitleResolved?.(created.title);
       const started = await jobsStartTranscription(created.id);
       onMeetingCreated?.(created, started.id);
@@ -169,7 +180,7 @@ export function MeetingRecordingPanel({
         return;
       }
       const path = Array.isArray(selected) ? selected[0] : selected;
-      const created = await meetingsCreateFromFile(path);
+      const created = await resolveMeetingFromPath(path);
       onTitleResolved?.(created.title);
       const started = await jobsStartTranscription(created.id);
       onMeetingCreated?.(created, started.id);
