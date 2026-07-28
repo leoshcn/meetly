@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "verify Settings DTO and IPC parity after changes"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "verify new settings columns and migration style"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "settings + summary test expectations"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "settings copy and context_text not mixed into ASR"}
+{"file": ".trellis/tasks/07-28-summary-system-prompt-settings/design.md", "reason": "check resolve/normalize/defaults against design"}
+{"file": ".trellis/tasks/07-28-summary-system-prompt-settings/prd.md", "reason": "acceptance criteria AC1–AC6"}

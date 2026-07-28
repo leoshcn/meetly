@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "Settings / SettingsUpdate IPC DTO and settings_get/update contracts to extend"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "settings singleton columns and idempotent migration pattern"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "SETTINGS_INVALID and summary error codes stay stable"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "settings-hotwords feature ownership for UI placement"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "settings copy: hotwords vs context vs new system prompts"}
+{"file": ".trellis/tasks/07-28-summary-system-prompt-settings/design.md", "reason": "resolution, DTO, migration, and UI contracts for this task"}
+{"file": ".trellis/tasks/07-28-summary-system-prompt-settings/prd.md", "reason": "accepted requirements and AC for implement agent"}
