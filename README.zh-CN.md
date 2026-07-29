@@ -61,6 +61,8 @@ Vite 会在 `http://localhost:1420` 启动，并打开 Meetly 窗口。
 
 凭证经系统钥匙串保存，**不会**写入 SQLite，也**不会**被 `settings_get` 回传。
 
+不知道怎么申请？请看图文指南：**[凭证申请图文指南（小白版）](./docs/credentials-guide.zh-CN.md)**（豆包 ASR、火山 TOS、通义千问 API Key）。
+
 ## 日常用法
 
 1. 选好麦克风 → **开始录音**（或 **导入音频并转写**）

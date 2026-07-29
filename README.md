@@ -61,6 +61,8 @@ Configure in **Settings**:
 
 Secrets live in the OS credential store only — never in SQLite, never returned by `settings_get`.
 
+Step-by-step Chinese guide (Doubao ASR, Volcengine TOS, Qwen / Bailian API Key): **[凭证申请图文指南](./docs/credentials-guide.zh-CN.md)**.
+
 ## Typical flow
 
 1. Pick a mic → **Start recording** (or **Import audio & transcribe**)
