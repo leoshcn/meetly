@@ -311,3 +311,36 @@ Shipped Meetly 0.3.0 Tauri updater (lean channel, About/banner UX, busy-safe ins
 ### Next Steps
 
 - None - task complete
+
+
+## Session 10: 录音悬浮窗与托盘隐藏
+
+**Date**: 2026-07-30
+**Task**: 录音悬浮窗与托盘隐藏
+**Branch**: `main`
+
+### Summary
+
+落地录音悬浮窗（可折叠拖动、主题透明）、开始录音后主窗口隐藏到托盘、关窗拦截只落盘；修复圆角外矩形底色；提交 feat e743e32 并归档任务。
+
+### Main Changes
+
+- Detailed change bullets were not supplied; see the summary above.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `e743e32` | (see git log) |
+
+### Testing
+
+- Validation was not recorded for this session.
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- None - task complete
