@@ -1,0 +1,10 @@
+{"file": ".trellis/tasks/07-29-recording-floating-widget/research/tauri-floating-window.md", "reason": "Check shadow=false (1px white border trap), no runtime window creation from sync commands, capability-per-label coverage, and explicit app exit with a persistent second window"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend test strategy for the widget and the recording-panel state sync; most acceptance criteria here are manual, so verify what is testable is tested"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Rust test strategy for the on_window_event close-interception branch"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Verify the new feature folder and main.tsx split follow the src/ layout"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Verify widget components and the close-confirmation modal follow component conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Verify the recording-state consistency fix matches project state conventions and does not destabilize onBusyChange/workspaceBusy"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Verify window-label routing and record_status handling stay typed"}
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "Verify no command/DTO drift and that the new inter-window events are documented"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "Verify record_stop failures in the close-interception path are surfaced via AppErrorDto without leaking filesystem detail beyond the intended save path"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Cross-layer consistency check across tauri.conf.json, capabilities, Rust, and both React window roots"}

@@ -1,0 +1,11 @@
+{"file": ".trellis/tasks/07-29-recording-floating-widget/research/tauri-floating-window.md", "reason": "Verified Tauri 2 window options, the Windows sync-command deadlock that forces static window declaration, per-window capability scoping, and the app-exit trap with a persistent second window"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "The widget is a new feature folder under src/features/ plus a main.tsx entry split; follow the established src/ layout"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Conventions for the new widget components and the AppShell modal"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Recording state is being made consistent across window/component unmount; needs the project's state conventions"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "record_status polling is implemented as hooks in both the widget and the recording panel"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Window-label routing and record_status payload handling must stay typed; no new DTOs are introduced"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "on_window_event lands in src-tauri/src/lib.rs; confirm where window-lifecycle logic belongs"}
+{"file": ".trellis/spec/backend/api-shape.md", "reason": "No new commands or DTOs — confirms record_status is the only data source; the new inter-window events must be recorded here in phase 6.3"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "The close-interception stop path surfaces record_stop failures to the user and must use AppErrorDto conventions"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "The widget must reuse record_status, the existing polling pattern, and theme CSS variables rather than introducing new signals or hardcoded colors"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Change spans tauri.conf.json, capabilities, Rust window events, and React across two windows"}
