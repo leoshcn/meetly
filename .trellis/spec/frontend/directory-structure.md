@@ -27,6 +27,7 @@ src/
 │   ├── settings-about/
 │   ├── app-update/
 │   ├── meeting-recording/
+│   ├── recorder-widget/
 │   ├── transcription-import/
 │   ├── meeting-summary/
 │   └── meeting-sidebar/
@@ -42,7 +43,7 @@ src/
 └── main.tsx
 ```
 
-Evidence: `src/app/AppShell.tsx`, `src/pages/settings/SettingsPage.tsx`, `src/features/settings-hotwords/SettingsHotwords.tsx`, `src/features/app-update/`, `src/features/meeting-summary/`, `src/features/meeting-sidebar/`, `src/ipc/client.ts`.
+Evidence: `src/app/AppShell.tsx`, `src/pages/settings/SettingsPage.tsx`, `src/features/settings-hotwords/SettingsHotwords.tsx`, `src/features/app-update/`, `src/features/meeting-summary/`, `src/features/meeting-sidebar/`, `src/features/recorder-widget/`, `src/ipc/client.ts`.
 
 ---
 

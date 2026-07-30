@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { TranscriptionImportPanel } from "../../features/transcription-import";
 import { MeetingRecordingPanel } from "../../features/meeting-recording";
 import { MeetingSummaryPanel } from "../../features/meeting-summary";
@@ -174,6 +175,23 @@ export function HomePage({
     }
     wasTranscribing.current = transcribing;
   }, [transcribing, hasTranscript]);
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    void listen("recording:focus-request", () => {
+      // Return to the recording stage (R6.2), not another meeting workspace.
+      setActiveMeetingId(null);
+      setActiveTitle(null);
+      setActiveSourcePath("");
+      setHasTranscript(false);
+      setBootstrapJobId(null);
+    }).then((fn) => {
+      unlisten = fn;
+    });
+    return () => {
+      unlisten?.();
+    };
+  }, []);
 
   const isDraft =
     activeMeetingId !== null && activeSourcePath.trim().length === 0;

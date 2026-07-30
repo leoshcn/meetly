@@ -6,6 +6,7 @@ pub mod settings_service;
 pub mod settings_test_service;
 pub mod summary_service;
 pub mod transcription_service;
+pub mod tray_service;
 
 pub use settings_service::{
     clear_dashscope_credentials, clear_doubao_credentials, clear_tos_credentials, get_settings,

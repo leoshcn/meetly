@@ -23,7 +23,13 @@ export function resolveTheme(preference: ThemePreference): ResolvedTheme {
 export function applyResolvedTheme(resolved: ResolvedTheme): void {
   const root = document.documentElement;
   root.setAttribute("data-theme", resolved);
-  root.style.colorScheme = resolved;
+  // Transparent floating windows must not paint a solid color-scheme canvas
+  // behind rounded CSS (shows as a rectangle on black/white desktops).
+  if (root.classList.contains("recorder-widget-shell")) {
+    root.style.colorScheme = "normal";
+  } else {
+    root.style.colorScheme = resolved;
+  }
 }
 
 export function readCachedThemePreference(): ThemePreference | null {

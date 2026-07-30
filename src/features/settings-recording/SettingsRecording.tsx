@@ -5,7 +5,7 @@ import {
   settingsUpdate,
   type AppError,
 } from "../../ipc";
-import { friendlyErrorMessage } from "../../shared/lib";
+import { clearWidgetPosition, friendlyErrorMessage } from "../../shared/lib";
 import { Button } from "../../shared/ui";
 import styles from "./SettingsRecording.module.css";
 
@@ -15,6 +15,7 @@ export function SettingsRecordingPanel() {
   const [status, setStatus] = useState<"idle" | "loading" | "saving">("loading");
   const [error, setError] = useState<string | null>(null);
   const [savedHint, setSavedHint] = useState(false);
+  const [widgetResetHint, setWidgetResetHint] = useState(false);
 
   const refresh = useCallback(async () => {
     const settings = await settingsGet();
@@ -90,6 +91,11 @@ export function SettingsRecordingPanel() {
     }
   }
 
+  function resetWidgetPosition() {
+    clearWidgetPosition();
+    setWidgetResetHint(true);
+  }
+
   const busy = status === "loading" || status === "saving";
 
   return (
@@ -138,6 +144,17 @@ export function SettingsRecordingPanel() {
           {error}
         </p>
       )}
+
+      <h2 className={styles.subheading}>录音悬浮窗</h2>
+      <p className={styles.hint}>
+        录音期间桌面悬浮窗的位置会记住。若拖到已断开的显示器上，可在此重置回主屏默认位置。
+      </p>
+      <div className={styles.actions}>
+        <Button variant="secondary" onClick={resetWidgetPosition}>
+          重置悬浮窗位置
+        </Button>
+        {widgetResetHint && <span className={styles.ok}>已重置</span>}
+      </div>
     </section>
   );
 }

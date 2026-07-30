@@ -42,6 +42,16 @@ Applies when adding or changing any `#[tauri::command]`, frontend `invoke` wrapp
 | `record_start` | `{ device_id?: string \| null }` | `{ path, device_name, output_device_name }` — starts mic + WASAPI loopback mix | same |
 | `record_stop` | (none) | `{ path, duration_ms }` | same |
 | `record_status` | (none) | `{ state, path, started_at, device_name, output_device_name, mic_level, system_level }` — levels are smoothed \[0,1\] capture meters | same |
+| `recording_hide_to_tray` | (none) | `void` — show recording tray, hide `main` | `src-tauri/src/commands/tray.rs` |
+| `recording_restore_from_tray` | (none) | `void` — show/focus `main`, hide recording tray | same |
+| `recording_hide_tray` | (none) | `void` — hide tray only | same |
+
+### Window events (no command / DTO change)
+
+| Event | Direction | Payload | Source |
+|-------|-----------|---------|--------|
+| `recording:close-requested` | Rust → `main` | none | `src-tauri/src/lib.rs` `on_window_event` when main close is blocked while recording |
+| `recording:focus-request` | tray / `recorder-widget` → `main` | none | tray left-click/menu「打开 Meetly」or widget「打开 Meetly」; AppShell sets `screen=home` |
 
 ### Envelope
 

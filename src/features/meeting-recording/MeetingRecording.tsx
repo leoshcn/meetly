@@ -6,12 +6,21 @@ import {
   meetingsCreateFromFile,
   recordListInputDevices,
   recordStart,
+  recordStatus,
   recordStop,
   type AppError,
   type InputDevice,
   type Meeting,
 } from "../../ipc";
-import { errorTitle, friendlyErrorMessage } from "../../shared/lib";
+import {
+  errorTitle,
+  formatRecordingElapsed,
+  friendlyErrorMessage,
+  hideMainToTray,
+  hideRecorderWidget,
+  restoreMainFromTray,
+  showRecorderWidget,
+} from "../../shared/lib";
 import { Button } from "../../shared/ui";
 import { RecordingWaveform } from "./RecordingWaveform";
 import styles from "./MeetingRecording.module.css";
@@ -26,12 +35,7 @@ type Props = {
   onReset?: () => void;
 };
 
-function formatElapsed(ms: number): string {
-  const totalSec = Math.floor(ms / 1000);
-  const m = Math.floor(totalSec / 60);
-  const s = totalSec % 60;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
+const STATUS_SYNC_MS = 1000;
 
 export function MeetingRecordingPanel({
   draftMeetingId = null,
@@ -52,10 +56,24 @@ export function MeetingRecordingPanel({
   const [errorCode, setErrorCode] = useState<string | undefined>();
   const startedAtRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
+  const busyRef = useRef(false);
+  const recordingRef = useRef(false);
+  const [statusReady, setStatusReady] = useState(false);
 
   useEffect(() => {
+    busyRef.current = busy;
+  }, [busy]);
+
+  useEffect(() => {
+    recordingRef.current = recording;
+  }, [recording]);
+
+  // Gate onBusyChange until the first record_status sync so remounting after
+  // settings does not briefly report idle and flicker workspaceBusy / updateGate.
+  useEffect(() => {
+    if (!statusReady) return;
     onBusyChange?.(busy || recording);
-  }, [busy, recording, onBusyChange]);
+  }, [busy, recording, onBusyChange, statusReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,16 +113,87 @@ export function MeetingRecordingPanel({
     }
   }
 
-  function startTick() {
+  function startTickFrom(startedAtMs: number) {
     clearTick();
-    startedAtRef.current = Date.now();
-    setElapsedMs(0);
+    startedAtRef.current = startedAtMs;
+    setElapsedMs(Math.max(0, Date.now() - startedAtMs));
     tickRef.current = window.setInterval(() => {
       if (startedAtRef.current !== null) {
         setElapsedMs(Date.now() - startedAtRef.current);
       }
     }, 250);
   }
+
+  function applyIdleUi() {
+    clearTick();
+    startedAtRef.current = null;
+    setElapsedMs(0);
+    setRecording(false);
+    setDeviceName(null);
+    setOutputDeviceName(null);
+  }
+
+  function applyRecordingStatus(status: {
+    started_at: string | null;
+    device_name: string | null;
+    output_device_name: string | null;
+  }) {
+    const parsed = status.started_at ? Date.parse(status.started_at) : NaN;
+    if (Number.isFinite(parsed)) {
+      if (startedAtRef.current !== parsed) {
+        startTickFrom(parsed);
+      }
+    }
+    setDeviceName(status.device_name);
+    setOutputDeviceName(status.output_device_name);
+    setRecording(true);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function syncStatus() {
+      if (busyRef.current) {
+        // Still unlock onBusyChange so a slow first poll cannot leave busy
+        // reporting gated while the user already started an action.
+        if (!cancelled) setStatusReady(true);
+        return;
+      }
+      try {
+        const status = await recordStatus();
+        if (cancelled) return;
+        if (status.state === "recording") {
+          applyRecordingStatus(status);
+        } else if (!busyRef.current && recordingRef.current) {
+          // External stop (close-intercept path, etc.) — converge local UI.
+          applyIdleUi();
+          void hideRecorderWidget().catch(() => {
+            // Ignore hide races during exit.
+          });
+          void restoreMainFromTray().catch(() => {
+            // Ignore tray races during exit.
+          });
+        }
+        setStatusReady(true);
+      } catch {
+        // Ignore transient status failures; still unblock busy reporting so
+        // start/stop actions are not stuck gated behind a failed first poll.
+        if (!cancelled) setStatusReady(true);
+      }
+    }
+
+    void syncStatus();
+    const id = window.setInterval(() => {
+      void syncStatus();
+    }, STATUS_SYNC_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+    // Intentionally mount-only: sync polls independently of local recording flag.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function resolveMeetingFromPath(path: string): Promise<Meeting> {
     if (draftMeetingId) {
@@ -122,8 +211,23 @@ export function MeetingRecordingPanel({
       const started = await recordStart(deviceId || null);
       setDeviceName(started.device_name);
       setOutputDeviceName(started.output_device_name);
-      setRecording(true);
-      startTick();
+      const status = await recordStatus();
+      if (status.state === "recording" && status.started_at) {
+        applyRecordingStatus(status);
+      } else {
+        setRecording(true);
+        startTickFrom(Date.now());
+      }
+      try {
+        await showRecorderWidget();
+      } catch {
+        // Widget is best-effort; recording continues without it.
+      }
+      try {
+        await hideMainToTray();
+      } catch {
+        // Tray hide is best-effort; recording continues with main visible.
+      }
     } catch (err) {
       const appErr = err as AppError;
       setError(friendlyErrorMessage(appErr));
@@ -139,10 +243,19 @@ export function MeetingRecordingPanel({
     setBusy(true);
     clearTick();
     try {
+      // Restore main before stop so the user sees export / transcription UI.
+      try {
+        await restoreMainFromTray();
+      } catch {
+        // Best-effort; stop proceeds even if tray/main restore fails.
+      }
       const stopped = await recordStop();
-      setRecording(false);
-      setDeviceName(null);
-      setOutputDeviceName(null);
+      applyIdleUi();
+      try {
+        await hideRecorderWidget();
+      } catch {
+        // Ignore hide failures after stop.
+      }
       const created = await resolveMeetingFromPath(stopped.path);
       onTitleResolved?.(created.title);
       const started = await jobsStartTranscription(created.id);
@@ -151,9 +264,17 @@ export function MeetingRecordingPanel({
       const appErr = err as AppError;
       setError(friendlyErrorMessage(appErr));
       setErrorCode(errorTitle(appErr));
-      setRecording(false);
-      setDeviceName(null);
-      setOutputDeviceName(null);
+      applyIdleUi();
+      try {
+        await hideRecorderWidget();
+      } catch {
+        // Ignore.
+      }
+      try {
+        await restoreMainFromTray();
+      } catch {
+        // Ignore.
+      }
     } finally {
       setBusy(false);
     }
@@ -204,7 +325,7 @@ export function MeetingRecordingPanel({
         <p className={styles.brand}>Meetly</p>
         <h1 className={styles.stageTitle}>正在录音</h1>
         <p className={styles.timer} aria-live="polite">
-          {formatElapsed(elapsedMs)}
+          {formatRecordingElapsed(elapsedMs)}
         </p>
         <RecordingWaveform active={recording} />
         {deviceName && (

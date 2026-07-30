@@ -1,0 +1,145 @@
+.pill {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  height: 100%;
+  padding: 0 0.7rem 0 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+  /* drop-shadow follows the rounded alpha; box-shadow fills the square window. */
+  box-shadow: none;
+  filter: drop-shadow(0 8px 18px color-mix(in srgb, var(--ink) 28%, transparent));
+  color: var(--ink);
+  user-select: none;
+  cursor: grab;
+}
+
+.pill:active {
+  cursor: grabbing;
+}
+
+.collapsed {
+  justify-content: center;
+  padding: 0;
+  border-radius: 999px;
+  cursor: grab;
+}
+
+.collapsed:active {
+  cursor: grabbing;
+}
+
+.collapsed:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--danger);
+  flex-shrink: 0;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent);
+  animation: breathe 1.6s ease-in-out infinite;
+}
+
+.dotStatic {
+  animation: none;
+}
+
+.timer {
+  margin: 0;
+  font-family: var(--font-mono, ui-monospace, "Cascadia Mono", monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  min-width: 7ch;
+  text-align: left;
+  color: var(--ink);
+}
+
+.meters {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 52px;
+  flex-shrink: 0;
+}
+
+.meterTrack {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: inherit;
+  background: rgb(var(--canvas-accent));
+  transform-origin: left center;
+  transition: transform 60ms linear;
+}
+
+.meterFillStatic {
+  transition: none;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+}
+
+.action {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 0.28rem 0.45rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.action:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.action:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 40%, transparent);
+  }
+  50% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--danger) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot {
+    animation: none;
+  }
+
+  .meterFill {
+    transition: none;
+  }
+}

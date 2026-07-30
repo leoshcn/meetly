@@ -8,7 +8,7 @@ mod services;
 use std::sync::Mutex;
 
 use rusqlite::Connection;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 pub use error::{AppErrorDto, CmdResult};
 use services::recording_service::RecordingSession;
@@ -43,7 +43,35 @@ pub fn run() {
                 db: Mutex::new(conn),
                 recording: RecordingSession::spawn(),
             });
+            services::tray_service::setup_recording_tray(app.handle())
+                .map_err(|e| format!("Failed to set up recording tray: {e}"))?;
             Ok(())
+        })
+        .on_window_event(|window, event| {
+            let tauri::WindowEvent::CloseRequested { api, .. } = event else {
+                return;
+            };
+
+            match window.label() {
+                "recorder-widget" => {
+                    api.prevent_close();
+                }
+                "main" => {
+                    let recording = window
+                        .try_state::<AppState>()
+                        .and_then(|state| state.recording.status().ok())
+                        .is_some_and(|status| status.state == "recording");
+
+                    if recording {
+                        api.prevent_close();
+                        let _ = window.emit("recording:close-requested", ());
+                    } else {
+                        // Persistent recorder-widget would otherwise keep the process alive.
+                        window.app_handle().exit(0);
+                    }
+                }
+                _ => {}
+            }
         })
         .invoke_handler(tauri::generate_handler![
             commands::health::app_health,
@@ -74,6 +102,9 @@ pub fn run() {
             commands::recording::record_status,
             commands::recording::ffmpeg_status,
             commands::recording::ffmpeg_download,
+            commands::tray::recording_hide_to_tray,
+            commands::tray::recording_restore_from_tray,
+            commands::tray::recording_hide_tray,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -54,6 +54,11 @@ export {
   recordStop,
   recordStatus,
 } from "./commands/recording";
+export {
+  recordingHideToTray,
+  recordingRestoreFromTray,
+  recordingHideTray,
+} from "./commands/tray";
 export { ffmpegStatus, ffmpegDownload } from "./commands/ffmpeg";
 export {
   appGetVersion,
